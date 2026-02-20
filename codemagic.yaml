@@ -2,6 +2,7 @@ workflows:
   ios-appstore:
     name: iOS App Store Build
     max_build_duration: 60
+
     environment:
       flutter: stable
       xcode: latest
@@ -9,10 +10,10 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.taskiq.taskiq.ios
+
     scripts:
-      - name: Get Flutter packages
-        script: |
-          flutter pub get
+      - name: Flutter pub get
+        script: flutter pub get
 
       - name: Install CocoaPods
         script: |
@@ -20,13 +21,12 @@ workflows:
           pod install
           cd ..
 
-      - name: Flutter build ipa
-        script: |
-          flutter build ipa --release
+      - name: Build IPA
+        script: flutter build ipa --release
 
     artifacts:
       - build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: integration
