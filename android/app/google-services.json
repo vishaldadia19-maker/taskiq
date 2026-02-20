@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "843862557345",
+    "project_id": "taskiq-ad680",
+    "storage_bucket": "taskiq-ad680.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843862557345:android:18e7b2a243990013eae6e0",
+        "android_client_info": {
+          "package_name": "com.taskiq.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "843862557345-jb5hthctfekl35m8d1qujd9ocs5tfeov.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taskiq.app",
+            "certificate_hash": "4eeb489bc5ba4c6dfa7638a0e8fe320f2b657d36"
+          }
+        },
+        {
+          "client_id": "843862557345-1rsnrv9s7i30qfmqmerjnmlqot35eppj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9DGtKkf4OONnTFKghkTbTSn5gCVxt_Os"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "843862557345-1rsnrv9s7i30qfmqmerjnmlqot35eppj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "843862557345-shic64io5nbe4b32n1p5qev72s8m52dd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.taskiq.taskiq"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843862557345:android:08bcd6112323319feae6e0",
+        "android_client_info": {
+          "package_name": "com.taskiq.taskiq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "843862557345-0u64m25a56oklu8c7advs2fv642ndmvf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taskiq.taskiq",
+            "certificate_hash": "4eeb489bc5ba4c6dfa7638a0e8fe320f2b657d36"
+          }
+        },
+        {
+          "client_id": "843862557345-u0b9pn7nesgcv9vbf5s2gmje7sdfe8co.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taskiq.taskiq",
+            "certificate_hash": "e795cc396f9f6871f046bf6af6fa2d251a49fe1a"
+          }
+        },
+        {
+          "client_id": "843862557345-1rsnrv9s7i30qfmqmerjnmlqot35eppj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9DGtKkf4OONnTFKghkTbTSn5gCVxt_Os"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "843862557345-1rsnrv9s7i30qfmqmerjnmlqot35eppj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "843862557345-shic64io5nbe4b32n1p5qev72s8m52dd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.taskiq.taskiq"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
