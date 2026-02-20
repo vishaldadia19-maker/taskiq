@@ -18,8 +18,15 @@ workflows:
           pod install
           cd ..
 
-      - name: Build iOS without signing
+      - name: Build iOS (unsigned)
         script: flutter build ios --release --no-codesign
 
     artifacts:
       - build/ios/iphoneos/*.app
+
+    publishing:
+      ios:
+        provisioning_profiles:
+          - TASKIQ_APPSTORE_PROFILE
+        certificates:
+          - TASKIQ_DIST_CERT
