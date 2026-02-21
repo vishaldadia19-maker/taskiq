@@ -10,8 +10,6 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.taskiq.taskiq.ios
-        certificate_reference: TASKIQ_DIST_CERT
-        provisioning_profile_reference: TaskIQ_AppStore_Profile
 
     scripts:
       - name: Flutter pub get
