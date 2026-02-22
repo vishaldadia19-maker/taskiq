@@ -66,40 +66,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result['success'] == true) {
 
-      final prefs = await SharedPreferences.getInstance();
+  final prefs = await SharedPreferences.getInstance();
 
-      await prefs.setInt('user_id', result['user']['id']);
-      await prefs.setString(
-          'firebase_uid', result['user']['firebase_uid']);
+  await prefs.setInt('user_id', result['user']['id']);
 
-      // Save username for later use
-      await prefs.setString(
-          'username', result['user']['username'] ?? '');
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text("Saved user_id: ${result['user']['id']}")),
+  );
 
-      // Optional (if your API returns name/email)
-      await prefs.setString(
-          'display_name', result['user']['name'] ?? '');
-
-      await prefs.setString(
-          'email', result['user']['email'] ?? '');
-
-
-
-      await prefs.setBool('remember_me', rememberMe);
-
-      if (rememberMe) {
-        await prefs.setString(
-            'saved_username', _usernameController.text.trim());
-        await prefs.setString(
-            'saved_password', _passwordController.text.trim());
-      } else {
-        await prefs.remove('saved_username');
-        await prefs.remove('saved_password');
-      }
-
-      AuthState.backendReady.value = true;
-
-    } else {
+  AuthState.backendReady.value = true;
+}
+ else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error'] ?? "Login failed")),
       );
