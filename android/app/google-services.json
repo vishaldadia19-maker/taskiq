@@ -39,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "843862557345-shic64io5nbe4b32n1p5qev72s8m52dd.apps.googleusercontent.com",
+              "client_id": "843862557345-ko54aenu1q3rpne1ig5l8o6r6odkelbo.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.taskiq.taskiq"
+                "bundle_id": "com.taskiq.taskiq.ios"
               }
             }
           ]
@@ -91,10 +91,10 @@
               "client_type": 3
             },
             {
-              "client_id": "843862557345-shic64io5nbe4b32n1p5qev72s8m52dd.apps.googleusercontent.com",
+              "client_id": "843862557345-ko54aenu1q3rpne1ig5l8o6r6odkelbo.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.taskiq.taskiq"
+                "bundle_id": "com.taskiq.taskiq.ios"
               }
             }
           ]

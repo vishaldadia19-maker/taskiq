@@ -23,10 +23,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
@@ -67,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '843862557345',
     projectId: 'taskiq-ad680',
     storageBucket: 'taskiq-ad680.firebasestorage.app',
-    androidClientId: '843862557345-jb5hthctfekl35m8d1qujd9ocs5tfeov.apps.googleusercontent.com',
+    androidClientId: '843862557345-0u64m25a56oklu8c7advs2fv642ndmvf.apps.googleusercontent.com',
     iosClientId: '843862557345-shic64io5nbe4b32n1p5qev72s8m52dd.apps.googleusercontent.com',
     iosBundleId: 'com.taskiq.taskiq',
   );
@@ -81,4 +78,16 @@ class DefaultFirebaseOptions {
     storageBucket: 'taskiq-ad680.firebasestorage.app',
     measurementId: 'G-6D9R9767NB',
   );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDX324ZRe9HzFmnwahfz6XdPDtVS_BVnSw',
+    appId: '1:843862557345:ios:51f7abe8f7354895eae6e0',
+    messagingSenderId: '843862557345',
+    projectId: 'taskiq-ad680',
+    storageBucket: 'taskiq-ad680.firebasestorage.app',
+    androidClientId: '843862557345-0u64m25a56oklu8c7advs2fv642ndmvf.apps.googleusercontent.com',
+    iosClientId: '843862557345-ko54aenu1q3rpne1ig5l8o6r6odkelbo.apps.googleusercontent.com',
+    iosBundleId: 'com.taskiq.taskiq.ios',
+  );
+
 }
