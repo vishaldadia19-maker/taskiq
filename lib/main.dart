@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'services/auth_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +21,42 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginScreen(), // 🔥 Testing LoginScreen directly
+      home: AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return ValueListenableBuilder<bool>(
+          valueListenable: AuthState.backendReady,
+          builder: (context, backendReady, _) {
+
+            if (!snapshot.hasData) {
+              return const LoginScreen();
+            }
+
+            if (!backendReady) {
+              return const LoginScreen();
+            }
+
+            return const DashboardScreen();
+          },
+        );
+      },
     );
   }
 }
