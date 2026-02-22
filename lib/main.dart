@@ -12,38 +12,53 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: AuthGate(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  String status = "Checking prefs...";
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool backendReady = false;
 
   @override
   void initState() {
     super.initState();
-    testPrefs();
+    checkPrefs();
   }
 
-  Future<void> testPrefs() async {
+  Future<void> checkPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getInt('user_id');
-    setState(() {
-      status = "Prefs working. user_id: $value";
-    });
+    backendReady = prefs.getInt('user_id') != null;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text(status),
-        ),
-      ),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        return Scaffold(
+          body: Center(
+            child: Text(
+              "AuthGate OK\nfirebaseUser: ${snapshot.hasData}\nbackendReady: $backendReady",
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      },
     );
   }
 }
