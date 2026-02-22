@@ -135,8 +135,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     
-    _loadUserAndLoadTasks();
-
+    _loadUserAndLoadTasks().then((_) {
+      if (selectedIndex == 0) {
+        _loadActionTasks(reset: true);
+      }
+    });
     
 
     _scrollController.addListener(() {
@@ -811,21 +814,18 @@ Future<bool?> _showAddRemarkDialog(Map task) async {
 
 
 
-Future<void> _loadUserAndLoadTasks() async {
-  final prefs = await SharedPreferences.getInstance();
-  userId = prefs.getInt('user_id');
+  Future<void> _loadUserAndLoadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    userId = prefs.getInt('user_id');
 
-  debugPrint("🔥 USER ID VALUE: $userId");
-
-  if (userId == null) {
-    debugPrint("❌ USER ID IS NULL - STOPPING DASHBOARD");
-    return;
+    if (userId != null) {
+      await _loadDelegates(); // 🔥 THIS WAS MISSING
+      await _loadCategories(); // ✅ THIS WAS MISSING
+      await _loadTasks();      
+    } else {
+      debugPrint('❌ user_id not found in SharedPreferences');
+    }
   }
-
-  await _loadDelegates();
-  await _loadCategories();
-  await _loadTasks();
-}  
   
 void _openFilterSheet() {
   showModalBottomSheet(
