@@ -80,9 +80,7 @@ class AuthService {
   /// 🔥 BACKEND SYNC + LOCAL STORAGE
   Future<void> _syncAndStoreUser(User user) async {
     final res = await http.post(
-      Uri.parse(
-        'https://backoffice.thecubeclub.co/task_apis/auth_user.php',
-      ),
+      Uri.parse('${baseUrl}auth_user.php'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'firebase_uid': user.uid,
