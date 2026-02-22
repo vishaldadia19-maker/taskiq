@@ -70,9 +70,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   await prefs.setInt('user_id', result['user']['id']);
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text("Saved user_id: ${result['user']['id']}")),
-  );
+//  ScaffoldMessenger.of(context).showSnackBar(
+  //  SnackBar(content: Text("Saved user_id: ${result['user']['id']}")),
+  //);
 
   AuthState.backendReady.value = true;
 }

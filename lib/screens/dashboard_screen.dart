@@ -55,6 +55,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List pendingApprovalTasks = [];
 
+  bool isDashboardReady = false;
+
 
 
 
@@ -130,17 +132,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
 
+Future<void> _initializeDashboard() async {
+  await _loadUserAndLoadTasks();
+  await _loadActionTasks(reset: true);
+}
+
 
   @override
   void initState() {
     super.initState();
     
-    _loadUserAndLoadTasks().then((_) {
-      if (selectedIndex == 0) {
-        _loadActionTasks(reset: true);
-      }
-    });
-    
+    _initializeDashboard();
+
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
@@ -227,53 +230,53 @@ Future<void> _loadActionTasks({bool reset = false}) async {
   if (isLoading) return;
 
   if (reset) {
-    pendingApprovalTasks.clear();   // ✅ ADD
+    pendingApprovalTasks.clear();
     actionTodayTasks.clear();
     actionOverdueTasks.clear();
-    offset = 0;
-    hasMore = true;
+    isDashboardReady = false;   // 🔥 ADD THIS
+
   }
 
   setState(() => isLoading = true);
 
-  // 🔶 1. Fetch Pending Approval
-  final pendingResult = await TaskListService.fetchTasks(
-    userId: userId!,
-    offset: 0,
-    filter: 'PENDING_APPROVAL',
-  );
+  try {
+    final response = await http.post(
+      Uri.parse('${baseUrl}action_dashboard.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'delegate_ids': selectedDelegateIds,
+        'priorities': filterPriority,
+        'category_ids': selectedCategoryIds,
+      }),
+    );
 
-  if (pendingResult['status'] == true) {
-    pendingApprovalTasks =
-        pendingResult['data']['tasks'];
-  }
+    final data = jsonDecode(response.body);
 
-  // 🟢 2. Fetch TODAY
-  final todayResult = await TaskListService.fetchTasks(
-    userId: userId!,
-    offset: 0,
-    filter: 'TODAY',
-    delegateIds: selectedDelegateIds,
-    priorities: filterPriority,
-    categoryIds: selectedCategoryIds,
-  );
+    if (data['status'] == true) {
+      setState(() {
+        pendingApprovalTasks =
+            List<Map<String, dynamic>>.from(data['data']['pending'] ?? []);
 
-  if (todayResult['status'] == true) {
-    actionTodayTasks = todayResult['data']['tasks'];
-  }
+        actionTodayTasks =
+            List<Map<String, dynamic>>.from(data['data']['today'] ?? []);
 
-  // 🔴 3. Fetch OVERDUE
-  final overdueResult = await TaskListService.fetchTasks(
-    userId: userId!,
-    offset: 0,
-    filter: 'OVERDUE',
-    delegateIds: selectedDelegateIds,
-    priorities: filterPriority,
-    categoryIds: selectedCategoryIds,
-  );
+        actionOverdueTasks =
+            List<Map<String, dynamic>>.from(data['data']['overdue'] ?? []);
 
-  if (overdueResult['status'] == true) {
-    actionOverdueTasks = overdueResult['data']['tasks'];
+        isDashboardReady = true; // 🔥 important
+
+      });
+    } else {
+      debugPrint("Action API Error: ${data['message']}");
+    }
+  } catch (e) {
+    debugPrint("Action Load Error: $e");
+
+    setState(() {
+      isDashboardReady = true;
+    });
+
   }
 
   setState(() => isLoading = false);
@@ -819,15 +822,18 @@ Future<bool?> _showAddRemarkDialog(Map task) async {
     userId = prefs.getInt('user_id');
 
     if (userId != null) {
-      await _loadDelegates(); // 🔥 THIS WAS MISSING
-      await _loadCategories(); // ✅ THIS WAS MISSING
-      await _loadTasks();      
+      await _loadCategories(); // ✅ THIS WAS MISSING     
     } else {
       debugPrint('❌ user_id not found in SharedPreferences');
     }
   }
   
-void _openFilterSheet() {
+void _openFilterSheet() async {
+
+  if (delegates.isEmpty && !isDelegateLoading) {
+    await _loadDelegates();
+  }
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -1236,6 +1242,39 @@ Future<void> _loadCompletedTasks({bool reset = false}) async {
   setState(() => isLoading = false);
 }
 
+Future<void> _confirmSnooze(Map task) async {
+  final bool? confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Snooze Task'),
+      content: const Text(
+        'This task will be hidden for today and will reappear tomorrow.\n\nDo you want to continue?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text(
+            'Snooze',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
+    await _handleTaskForToday(
+      task,
+      message:
+          'Snoozed for today. It will reappear tomorrow.',
+    );
+  }
+}
+
 
 /// 🧾 TASK TILE (Chat-style)
 /// 🧾 COMPACT TASK TILE (Dense + Left Status Bar)
@@ -1291,6 +1330,10 @@ Widget _taskTile(Map task) {
   final String? nextDueDate =
     task['next_due_date'] ?? task['due_date'];
 
+  final bool canSnooze =
+      !isCompleted &&
+      !isCompletionRequested &&
+        (selectedIndex == 0); // Action tab
       
 
 
@@ -1480,6 +1523,32 @@ Widget _taskTile(Map task) {
               ],
             ),
           ),
+
+if (selectedIndex == 0 &&
+    !isCompleted &&
+    !isCompletionRequested)
+  Row(
+    children: [
+      IconButton(
+        icon: const Icon(
+          Icons.snooze,
+          color: Colors.red,
+          size: 20,
+        ),
+        onPressed: () async {
+            await _confirmSnooze(task);
+        },
+      ),
+
+      Container(
+        height: 20,
+        width: 1,
+        color: Colors.grey.shade300,
+      ),
+
+      const SizedBox(width: 4),
+    ],
+  ),          
 
           /// MENU
           PopupMenuButton<String>(
@@ -2347,11 +2416,19 @@ Widget build(BuildContext context) {
                             !isCompletedView &&
                             !isAllRecordsMode) {
 
-                          if (actionTodayTasks.isEmpty &&
-                              actionOverdueTasks.isEmpty &&
-                              !isLoading) {
-                            return _buildFriendlyEmptyState();
-                          }
+                            // 🔹 Wait until first API response
+                            if (!isDashboardReady) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+
+                            // 🔹 After API loaded → decide empty state
+                            if (actionTodayTasks.isEmpty &&
+                                actionOverdueTasks.isEmpty &&
+                                pendingApprovalTasks.isEmpty) {
+                              return _buildFriendlyEmptyState();
+                            }                   
 
                           return ListView(
                             controller: _scrollController,
