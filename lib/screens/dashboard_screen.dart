@@ -142,7 +142,11 @@ Future<void> _initializeDashboard() async {
   void initState() {
     super.initState();
     
-    _initializeDashboard();
+//    _initializeDashboard();
+
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeDashboard();
+      });    
 
 
     _scrollController.addListener(() {
@@ -1173,6 +1177,17 @@ Widget _participantRow(List doers, List viewers) {
 }
 
 
+Color _priorityColor(String priority) {
+  switch (priority.toUpperCase()) {
+    case 'URGENT':
+      return Colors.orange;
+    case 'LOW':
+      return Colors.blue;
+    case 'NORMAL':
+    default:
+      return Colors.green;
+  }
+}
 
 
 Future<void> _completeTask(Map task) async {
@@ -1374,10 +1389,11 @@ Widget _taskTile(Map task) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                /// TITLE
+                /// TITLE + PRIORITY (Inline)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     Expanded(
                       child: Text(
                         title,
@@ -1390,6 +1406,9 @@ Widget _taskTile(Map task) {
                       ),
                     ),
 
+                    const SizedBox(width: 6),
+
+                    // Recurring badge stays
                     if (isRecurring)
                       Container(
                         margin: const EdgeInsets.only(left: 6, top: 2),
@@ -1407,10 +1426,11 @@ Widget _taskTile(Map task) {
                           ),
                         ),
                       ),
-                    
                   ],
-                ),
+                ),                
                 const SizedBox(height: 4),
+
+              
 
                 if (isCompletionRequested)
                   Container(
@@ -1451,6 +1471,32 @@ Widget _taskTile(Map task) {
                 /// META LINE
                 Row(
                   children: [
+
+/// 🔥 PRIORITY FIRST
+    Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: _priorityColor(priority).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        priority,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: _priorityColor(priority),
+        ),
+      ),
+    ),
+
+    const Text(
+      ' • ',
+      style: TextStyle(color: Colors.grey),
+    ),
+
                     if (categoryName != null) ...[
                       Text(
                         categoryName,
@@ -1732,6 +1778,8 @@ Widget _categoryStrip() {
               label: c['category_name'],
               selected: selected,
                 onTap: () async {
+                  debugPrint("🟢 CATEGORY CLICKED: $id");
+
                   setState(() {
                     selectedCategoryIds
                       ..clear()
@@ -2198,49 +2246,6 @@ Widget _buildFriendlyEmptyState() {
 
           const SizedBox(height: 20),
 
-          const Text(
-            "👋 Welcome to TaskIQ",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          Column(
-            children: const [
-              SizedBox(height: 12),
-
-              Text(
-                "No tasks found",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-
-              SizedBox(height: 8),
-
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  "There are no tasks in this filter right now. "
-                  "Create a new task to stay organized and keep moving forward.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5, // better readability
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 28),
 
           SizedBox(
             width: double.infinity,
