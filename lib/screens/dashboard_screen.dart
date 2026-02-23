@@ -1389,11 +1389,10 @@ Widget _taskTile(Map task) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                /// TITLE + PRIORITY (Inline)
+                /// TITLE
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Expanded(
                       child: Text(
                         title,
@@ -1406,9 +1405,6 @@ Widget _taskTile(Map task) {
                       ),
                     ),
 
-                    const SizedBox(width: 6),
-
-                    // Recurring badge stays
                     if (isRecurring)
                       Container(
                         margin: const EdgeInsets.only(left: 6, top: 2),
@@ -1426,11 +1422,11 @@ Widget _taskTile(Map task) {
                           ),
                         ),
                       ),
+                    
                   ],
-                ),                
+                ),
                 const SizedBox(height: 4),
-
-              
+               
 
                 if (isCompletionRequested)
                   Container(
@@ -1472,30 +1468,27 @@ Widget _taskTile(Map task) {
                 Row(
                   children: [
 
-/// 🔥 PRIORITY FIRST
-    Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: _priorityColor(priority).withOpacity(0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        priority,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: _priorityColor(priority),
-        ),
-      ),
-    ),
+                  if (!isRecurring)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _priorityColor(priority).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          priority,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: _priorityColor(priority).withOpacity(0.85),
+                          ),
+                        ),
+                      ),
+                    ), 
 
-    const Text(
-      ' • ',
-      style: TextStyle(color: Colors.grey),
-    ),
+                    const SizedBox(width: 6),
 
                     if (categoryName != null) ...[
                       Text(
