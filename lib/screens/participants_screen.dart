@@ -146,8 +146,18 @@ Widget _buildTile(Map item) {
 
         const SizedBox(width: 8),
 
-        /// ACTION BUTTON
-        _compactAction(item, isApproved, isPending, isIncoming),
+        SizedBox(
+          width: 110, // give fixed safe width
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _compactAction(
+              item,
+              isApproved,
+              isPending,
+              isIncoming,
+            ),
+          ),
+        ),        
       ],
     ),
   );
@@ -197,11 +207,30 @@ Widget _compactAction(
   bool isPending,
   bool isIncoming,
 ) {
+  Future<void> _handleDelete() async {
+    final res = await CollaborationService.rejectRequest(
+      userId: widget.userId,
+      collaborationId: item['collaboration_id'],
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(res['message'] ?? 'Updated')),
+    );
+
+    if (res['status'] == true) {
+      _loadCollaborations();
+    }
+  }
+
+  // APPROVED → Remove
   if (isApproved) {
-    return GestureDetector(
-      onTap: () {
-        // remove
-      },
+    return TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: _handleDelete,
       child: const Text(
         "Remove",
         style: TextStyle(
@@ -213,11 +242,15 @@ Widget _compactAction(
     );
   }
 
+  // PENDING (you sent) → Cancel
   if (isPending) {
-    return GestureDetector(
-      onTap: () {
-        // cancel
-      },
+    return TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: _handleDelete,
       child: const Text(
         "Cancel",
         style: TextStyle(
@@ -228,22 +261,46 @@ Widget _compactAction(
     );
   }
 
+  // PENDING (incoming) → Reject / Approve
   return Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      GestureDetector(
-        onTap: () {
-          // reject
-        },
+      TextButton(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        onPressed: _handleDelete,
         child: const Text(
           "Reject",
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
         ),
       ),
-      const SizedBox(width: 8),
-      GestureDetector(
-        onTap: () {
-          // approve
+      const SizedBox(width: 6),
+      TextButton(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        onPressed: () async {
+          final response =
+              await CollaborationService.approveCollaboration(
+            userId: widget.userId,
+            collaborationId: item['collaboration_id'],
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? 'Updated')),
+          );
+
+          if (response['status'] == true) {
+            _loadCollaborations();
+          }
         },
         child: const Text(
           "Approve",

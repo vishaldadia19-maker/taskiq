@@ -252,8 +252,13 @@ Future<void> _loadActionTasks({bool reset = false}) async {
         'delegate_ids': selectedDelegateIds,
         'priorities': filterPriority,
         'category_ids': selectedCategoryIds,
+        'search': searchQuery.isNotEmpty ? searchQuery : null,
+
       }),
     );
+
+    print("RAW RESPONSE:");
+    print(response.body);
 
     final data = jsonDecode(response.body);
 
@@ -2156,27 +2161,32 @@ Future<void> _loadAllRecords({bool reset = false}) async {
 
 void _onSearchChanged(String value) {
   searchQuery = value.trim();
-
-  if (searchQuery.length < 2) {
-    return;
-  }  
-
-  // Cancel previous debounce
-  if (_searchDebounce?.isActive ?? false) {
-    _searchDebounce!.cancel();
-  }
-
-  _searchDebounce = Timer(
-    const Duration(milliseconds: 350),
-    () {
-      _loadTasks(
-        reset: true,
-        filter: currentFilter,
-      );
-    },
-  );
 }
 
+Future<void> _executeSearch() async {
+
+  if (selectedIndex == 0 &&
+      !isCompletedView &&
+      !isAllRecordsMode) {
+
+    await _loadActionTasks(reset: true);
+
+  } else if (isCompletedView) {
+
+    await _loadCompletedTasks(reset: true);
+
+  } else if (isAllRecordsMode) {
+
+    await _loadAllRecords(reset: true);
+
+  } else {
+
+    await _loadTasks(
+      reset: true,
+      filter: currentFilter,
+    );
+  }
+}
 
 
 Widget _searchHeader() {
@@ -2194,13 +2204,26 @@ Widget _searchHeader() {
           child: TextField(
             controller: searchController,
             autofocus: true,
-            decoration: const InputDecoration(
+            textInputAction: TextInputAction.search, // 👈 keyboard shows SEARCH
+            decoration: InputDecoration(
               hintText: 'Search tasks…',
               border: InputBorder.none,
-              icon: Icon(Icons.search, size: 18),
+              prefixIcon: const Icon(Icons.search, size: 18),
+
+              // 👇 ADD THIS (manual search button)
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.arrow_forward),
+                onPressed: () async {
+                  searchQuery = searchController.text.trim();
+                  await _executeSearch();
+                },
+              ),
             ),
-            onChanged: (value) {
-              _onSearchChanged(value);
+
+            // 👇 ENTER key triggers search
+            onSubmitted: (value) async {
+              searchQuery = value.trim();
+              await _executeSearch();
             },
           ),
         ),
@@ -2211,17 +2234,17 @@ Widget _searchHeader() {
       /// ❌ CLOSE
       IconButton(
         icon: const Icon(Icons.close),
-        onPressed: () {
+        onPressed: () async {
           searchController.clear();
           searchQuery = '';
           setState(() => isSearching = false);
-          _loadTasks(reset: true, filter: currentFilter);
+          await _executeSearch(); // reload clean state properly
         },
       ),
-      
     ],
   );
 }
+
 
 Widget _buildFriendlyEmptyState() {
   return Center(

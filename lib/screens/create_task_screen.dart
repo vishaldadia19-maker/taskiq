@@ -85,6 +85,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
       _titleCtrl.text = t['title'] ?? '';
       _descCtrl.text = t['description'] ?? '';
+
+      // ✅ Auto open description box if description exists
+      if (_descCtrl.text.trim().isNotEmpty) {
+        showDescription = true;
+      }
+      
       priority = t['priority'] ?? 'NORMAL';
       
       assignType = t['task_type'] ?? 'SELF';
