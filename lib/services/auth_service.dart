@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_state.dart';
 import '../config/api_config.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 
 
@@ -16,33 +17,37 @@ class AuthService {
   
 
 
-  Future<Map<String, dynamic>> loginWithUsername({
-      required String username,
-      required String password,
-    }) async {
+Future<Map<String, dynamic>> loginWithUsername({
+  required String username,
+  required String password,
+  String? fcmToken,   // 👈 NEW
+}) async {
 
-    try {
-      final response = await http.post(
-        Uri.parse('${baseUrl}login_username.php'),
+  debugPrint("📲 Sending FCM Token: $fcmToken");
+  
+  try {
+    final response = await http.post(
+      Uri.parse('${baseUrl}login_username.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+        'fcm_token': fcmToken ?? '',   // 👈 send token
+      }),
+    );
 
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
-      );
+    debugPrint('🟢 Auth ${response.body}');
 
-      debugPrint('🟢 Auth ${response.body}');
+    return jsonDecode(response.body);
 
-      return jsonDecode(response.body);
-
-    } catch (e) {
-      return {
-        'success': false,
-        'error': 'Network error'
-      };
-    }
+  } catch (e) {
+    return {
+      'success': false,
+      'error': 'Network error'
+    };
   }
+}
+
 
 
   Future<void> signInWithGoogle() async {
@@ -79,6 +84,15 @@ class AuthService {
 
   /// 🔥 BACKEND SYNC + LOCAL STORAGE
   Future<void> _syncAndStoreUser(User user) async {
+
+    String? fcmToken;
+
+    if (!kIsWeb) {
+      await FirebaseMessaging.instance.requestPermission();
+      fcmToken = await FirebaseMessaging.instance.getToken();
+      debugPrint("📲 Google Login FCM: $fcmToken");
+    }
+
     final res = await http.post(
       Uri.parse('${baseUrl}auth_user.php'),
       headers: {'Content-Type': 'application/json'},
@@ -87,6 +101,7 @@ class AuthService {
         'email': user.email,
         'full_name': user.displayName,
         'photo_url': user.photoURL,
+        'fcm_token': fcmToken ?? '',   // 👈 NEW
       }),
     );
 

@@ -23,7 +23,7 @@ import '../config/api_config.dart';
 import '../services/auth_state.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'participants_screen.dart';
-
+import 'notifications_screen.dart';
 
 
 
@@ -80,6 +80,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool isCompletedView = false;
 
+  int unreadNotificationCount = 0;
+  bool isNotificationLoading = false;
 
 
 
@@ -135,6 +137,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 Future<void> _initializeDashboard() async {
   await _loadUserAndLoadTasks();
   await _loadActionTasks(reset: true);
+  await _loadNotificationsBadge();   // 🔔 ADD THIS
+
 }
 
 
@@ -187,13 +191,39 @@ Future<void> _refreshCurrentView() async {
 }
 
 
+Future<void> _loadNotificationsBadge() async {
+  if (userId == null) return;
+
+  try {
+    final response = await http.post(
+      Uri.parse('${baseUrl}get_notifications.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data['status'] == true) {
+      setState(() {
+        unreadNotificationCount = data['unread_count'] ?? 0;
+      });
+    }
+  } catch (e) {
+    debugPrint("Notification badge error: $e");
+  }
+}
+
+
+
     Future<void> _loadDelegates() async {
 
 
       if (userId == null) return;
 
-      debugPrint('🟢 _loadDelegates() called');
-      debugPrint('🟢 userId = $userId');    
+      //debugPrint('🟢 _loadDelegates() called');
+      //debugPrint('🟢 userId = $userId');    
 
 
       setState(() => isDelegateLoading = true);
@@ -202,16 +232,16 @@ Future<void> _refreshCurrentView() async {
         userId: userId!,
       );
 
-      debugPrint('🟢 Delegates fetched: ${delegates.length}');
-      debugPrint('🟢 Delegates data: $delegates');      
+      //debugPrint('🟢 Delegates fetched: ${delegates.length}');
+      //debugPrint('🟢 Delegates data: $delegates');      
 
       setState(() => isDelegateLoading = false);
     }
 
     Future<void> _loadCategories() async {
 
-  debugPrint('🟣 _loadCategories() called');
-  debugPrint('🟣 userId = $userId');    
+  //debugPrint('🟣 _loadCategories() called');
+  //debugPrint('🟣 userId = $userId');    
 
       if (userId == null) return;
 
@@ -221,10 +251,10 @@ Future<void> _refreshCurrentView() async {
         userId: userId!, // 🔥 REQUIRED
       );
 
-      debugPrint('🟢 Categories loaded: $categories');
+      //debugPrint('🟢 Categories loaded: $categories');
 
- debugPrint('🟣 categories length = ${categories.length}');
-  debugPrint('🟣 categories data = $categories');
+ //debugPrint('🟣 categories length = ${categories.length}');
+  //debugPrint('🟣 categories data = $categories');
   
       setState(() => isCategoryLoading = false);
     }
@@ -257,8 +287,8 @@ Future<void> _loadActionTasks({bool reset = false}) async {
       }),
     );
 
-    print("RAW RESPONSE:");
-    print(response.body);
+    // print("RAW RESPONSE:");
+    // print(response.body);
 
     final data = jsonDecode(response.body);
 
@@ -1112,71 +1142,52 @@ Future<void> _deleteTask(Map task) async {
 
 
 Widget _participantRow(List doers, List viewers) {
-  const int maxVisible = 3;
+  const int maxVisible = 4;
 
-  final List<String> doerNames =
-      doers.map((u) => u['name'].toString()).toList();
+  final List<Map<String, dynamic>> allParticipants = [
+    ...doers.map((u) => {...u, 'type': 'doer'}),
+    ...viewers.map((u) => {...u, 'type': 'viewer'}),
+  ];
 
-  final List<String> viewerNames =
-      viewers.map((u) => u['name'].toString()).toList();
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  return Wrap(
+    spacing: 6,
+    runSpacing: 4,
     children: [
+      ...allParticipants.take(maxVisible).map((user) {
+        final String name = user['name'] ?? '';
+        final bool isDoer = user['type'] == 'doer';
 
-      /// DOERS (Green compact chips)
-      if (doerNames.isNotEmpty)
-        Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          children: [
-            ...doerNames.take(maxVisible).map((name) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }),
-
-            if (doerNames.length > maxVisible)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  "+${doerNames.length - maxVisible}",
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ),
-          ],
-        ),
-
-      /// VIEWERS (Compact plain text list)
-      if (viewerNames.isNotEmpty) ...[
-        const SizedBox(height: 4),
-        Text(
-          viewerNames.join(' • '),
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade600,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isDoer
+                ? Colors.green.shade50
+                : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
           ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
+          child: Text(
+            name,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: isDoer ? Colors.green : Colors.black87,
+            ),
+          ),
+        );
+      }),
+
+      if (allParticipants.length > maxVisible)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            "+${allParticipants.length - maxVisible}",
+            style: const TextStyle(fontSize: 11),
+          ),
         ),
-      ],
     ],
   );
 }
@@ -1313,15 +1324,9 @@ Widget _taskTile(Map task) {
  final bool isCreator =
     int.tryParse(task['created_by'].toString()) == userId;
 
-  
-
-
   final participantsRaw = task['participants'];
-
-  
-
   final List delegates = task['delegates'] ?? [];
-
+  
   final Map<String, dynamic> participants =
       task['participants'] ?? {};
 
@@ -1364,6 +1369,10 @@ Widget _taskTile(Map task) {
           : isRecurring
               ? _recurrenceColor(recurrenceType)
               : Colors.green;
+
+//debugPrint("TASK ID: ${task['task_id']}");
+//debugPrint("DUE_DATE: ${task['due_date']}");
+//debugPrint("NEXT_DUE_DATE: ${task['next_due_date']}");              
  
   
   return InkWell(
@@ -1470,95 +1479,95 @@ Widget _taskTile(Map task) {
 
 
                 /// META LINE
-                Row(
-                  children: [
 
-                  if (!isRecurring)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _priorityColor(priority).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          priority,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: _priorityColor(priority).withOpacity(0.85),
-                          ),
-                        ),
-                      ),
-                    ), 
+Row(
+  children: [
+    Expanded(
+      child: Row(
+        children: [
+          if (!isRecurring)
+            Text(
+              priority,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: priority.toUpperCase() == 'URGENT'
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                color: priority.toUpperCase() == 'URGENT'
+                    ? Colors.red
+                    : Colors.grey.shade700,
+              ),
+            ),
 
-                    const SizedBox(width: 6),
+          const SizedBox(width: 6),
+          const Text(' • ', style: TextStyle(color: Colors.grey)),
 
-                    if (categoryName != null) ...[
-                      Text(
-                        categoryName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const Text(' • ',
-                          style: TextStyle(color: Colors.grey)),
-                    ],
-                    
-                    Text(
-                      isCompleted
-                          ? (nextDueDate != null
-                              ? 'Completed ${formatExtendedDate(task['completed_at'])}  • Next ${formatDueDate(nextDueDate)}'
-                              : 'Completed ${formatDueDate(task['completed_at'])}')
-                          : formatDueDate(dueDate),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isCompleted
-                            ? Colors.green
-                            : isOverdue
-                                ? Colors.red
-                                : isRecurring
-                                    ? _recurrenceColor(recurrenceType)
-                                    : Colors.grey.shade600,
-                        fontWeight: isCompleted ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  
-                    
-
-                    if (remarksCount > 0) ...[
-                      const Text(' • ', style: TextStyle(color: Colors.grey)),
-
-                      InkWell(
-                        onTap: () {
-                          _openRemarksSheet(task); // ✅ WORKS AGAIN
-                        },
-                        borderRadius: BorderRadius.circular(6),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.chat_bubble_outline,
-                              size: 14,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              remarksCount.toString(),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    
-                  ],
+          if (categoryName != null) ...[
+            Flexible(
+              child: Text(
+                categoryName,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
                 ),
+              ),
+            ),
+            const Text(' • ', style: TextStyle(color: Colors.grey)),
+          ],
+
+          Flexible(
+            child: Text(
+              isCompleted
+                  ? (nextDueDate != null
+                      ? 'Completed ${formatExtendedDate(task['completed_at'])} • Next ${formatDueDate(nextDueDate)}'
+                      : 'Completed ${formatDueDate(task['completed_at'])}')
+                  : formatDueDate(dueDate),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: isCompleted
+                    ? Colors.green
+                    : isOverdue
+                        ? Colors.red
+                        : isRecurring
+                            ? _recurrenceColor(recurrenceType)
+                            : Colors.grey.shade600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+
+    if (remarksCount > 0) ...[
+      const SizedBox(width: 6),
+      InkWell(
+        onTap: () => _openRemarksSheet(task),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.chat_bubble_outline,
+              size: 14,
+              color: Colors.grey,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              remarksCount.toString(),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ],
+),
+
                   if (doers.isNotEmpty || viewers.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     _participantRow(doers, viewers),
@@ -1568,31 +1577,26 @@ Widget _taskTile(Map task) {
             ),
           ),
 
+
 if (selectedIndex == 0 &&
     !isCompleted &&
     !isCompletionRequested)
-  Row(
-    children: [
-      IconButton(
-        icon: const Icon(
-          Icons.snooze,
-          color: Colors.red,
-          size: 20,
-        ),
-        onPressed: () async {
-            await _confirmSnooze(task);
-        },
-      ),
+  
+  SizedBox(
+  width: 48, // match IconButton default
+  child: IconButton(
+    padding: EdgeInsets.zero,
+    icon: const Icon(
+      Icons.snooze,
+      color: Colors.red,
+      size: 20,
+    ),
+    onPressed: () async {
+      await _confirmSnooze(task);
+    },
+  ),
+),
 
-      Container(
-        height: 20,
-        width: 1,
-        color: Colors.grey.shade300,
-      ),
-
-      const SizedBox(width: 4),
-    ],
-  ),          
 
           /// MENU
           PopupMenuButton<String>(
@@ -1776,7 +1780,7 @@ Widget _categoryStrip() {
               label: c['category_name'],
               selected: selected,
                 onTap: () async {
-                  debugPrint("🟢 CATEGORY CLICKED: $id");
+                  //debugPrint("🟢 CATEGORY CLICKED: $id");
 
                   setState(() {
                     selectedCategoryIds
@@ -1884,7 +1888,7 @@ Widget _normalHeader() {
 
           if (value == 'participants') {
 
-            debugPrint('🟢 userId value = $userId');
+            //debugPrint('🟢 userId value = $userId');
 
             Navigator.push(
               context,
@@ -1910,7 +1914,7 @@ Widget _normalHeader() {
           }
 
           if (value == 'daily') {
-            debugPrint('🟢 DAILY MENU CLICKED');
+            //debugPrint('🟢 DAILY MENU CLICKED');
 
             setState(() {
               isDailyMode = true;
@@ -1922,8 +1926,8 @@ Widget _normalHeader() {
               hasMore = true;
             });
 
-             debugPrint('🟢 isDailyMode = $isDailyMode');
-             debugPrint('🟢 currentFilter = $currentFilter');
+             // debugPrint('🟢 isDailyMode = $isDailyMode');
+             // debugPrint('🟢 currentFilter = $currentFilter');
 
             await _loadTasks(reset: true, filter: currentFilter);
           }
@@ -2041,8 +2045,63 @@ Widget _normalHeader() {
         onPressed: _openFilterSheet,
       ),
 
+      /// 🔔 NOTIFICATION
+      Stack(
+        children: [
+          IconButton(
+            icon: Icon(
+              unreadNotificationCount > 0
+                  ? Icons.notifications
+                  : Icons.notifications_none,
+              size: 24,
+            ),
+            onPressed: () async {
+              final refreshed = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>  NotificationsScreen(),
+                ),
+              );
+
+              if (refreshed == true) {
+                await _loadNotificationsBadge();
+              }
+            },
+          ),
+
+          if (unreadNotificationCount > 0)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                child: Text(
+                  unreadNotificationCount > 99
+                      ? '99+'
+                      : unreadNotificationCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+
       /// ➕ ADD
       IconButton(
+      
         icon: const Icon(
           Icons.add_circle,
           color: Colors.green,
@@ -2326,8 +2385,8 @@ Widget _buildFriendlyEmptyState() {
 
     setState(() => isLoading = true);
 
-    debugPrint('🟡 LOAD TASKS CALLED');
-    debugPrint('🟡 isDailyMode = $isDailyMode');
+    // debugPrint('🟡 LOAD TASKS CALLED');
+    // debugPrint('🟡 isDailyMode = $isDailyMode');
 
 
     final result = await TaskListService.fetchTasks(
@@ -2753,7 +2812,7 @@ Widget _searchBar() {
 String formatDueDate(String? dateTime) {
   if (dateTime == null || dateTime.isEmpty) return 'No due date';
 
-  final due = DateTime.parse(dateTime);
+  final due = DateTime.parse(dateTime.replaceFirst(' ', 'T')).toLocal();
   final now = DateTime.now();
 
   final diff = due.difference(now);

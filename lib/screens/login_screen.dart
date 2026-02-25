@@ -3,6 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,43 +47,48 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _loginWithUsername() async {
+Future<void> _loginWithUsername() async {
 
-    if (_usernameController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter username & password")),
-      );
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    final result = await AuthService().loginWithUsername(
-      username: _usernameController.text.trim(),
-      password: _passwordController.text,
+  if (_usernameController.text.trim().isEmpty ||
+      _passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Enter username & password")),
     );
-
-    setState(() => isLoading = false);
-
-    if (result['success'] == true) {
-
-  final prefs = await SharedPreferences.getInstance();
-
-  await prefs.setInt('user_id', result['user']['id']);
-
-//  ScaffoldMessenger.of(context).showSnackBar(
-  //  SnackBar(content: Text("Saved user_id: ${result['user']['id']}")),
-  //);
-
-  AuthState.backendReady.value = true;
-}
- else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['error'] ?? "Login failed")),
-      );
-    }
+    return;
   }
+
+  setState(() => isLoading = true);
+
+  String? fcmToken;
+
+  if (!kIsWeb) {
+    await FirebaseMessaging.instance.requestPermission();
+    fcmToken = await FirebaseMessaging.instance.getToken();
+    print("FCM TOKEN: $fcmToken");
+  }
+
+  final result = await AuthService().loginWithUsername(
+    username: _usernameController.text.trim(),
+    password: _passwordController.text,
+    fcmToken: fcmToken, // 👈 send token here
+  );
+
+  setState(() => isLoading = false);
+
+  if (result['success'] == true) {
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('user_id', result['user']['id']);
+
+    AuthState.backendReady.value = true;
+
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result['error'] ?? "Login failed")),
+    );
+  }
+}
+  
 
   @override
   void dispose() {
