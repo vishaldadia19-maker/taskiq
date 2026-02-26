@@ -1523,6 +1523,7 @@ Row(
                       ? 'Completed ${formatExtendedDate(task['completed_at'])} • Next ${formatDueDate(nextDueDate)}'
                       : 'Completed ${formatDueDate(task['completed_at'])}')
                   : formatDueDate(dueDate),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
@@ -1534,6 +1535,7 @@ Row(
                             ? _recurrenceColor(recurrenceType)
                             : Colors.grey.shade600,
               ),
+
             ),
           ),
         ],

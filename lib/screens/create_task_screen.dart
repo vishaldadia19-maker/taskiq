@@ -176,10 +176,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   }
 
   
-
-
-
- Future<void> _loadCategories() async {
+Future<void> _loadCategories() async {
   if (userId == null) return;
 
   setState(() => loadingCategories = true);
@@ -193,14 +190,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
     final data = jsonDecode(res.body);
 
-
-
     if (data['success'] == true) {
-      categories = List<Map<String, dynamic>>.from(data['categories']);
+      setState(() {
+        categories = List<Map<String, dynamic>>.from(data['categories']);
 
-      if (!categories.any((c) => c['id'] == selectedCategoryId)) {
-        selectedCategoryId = null;
-      }
+        if (!categories.any((c) => c['id'] == selectedCategoryId)) {
+          selectedCategoryId = null;
+        }
+      });
     }
   } catch (e) {
     debugPrint('Category load error: $e');
@@ -638,9 +635,8 @@ Card(
               ),
             );
 
-            if (updated == true) {
-              _loadCategories();
-            }
+            _loadCategories();
+            
           },
         ),
       ],
@@ -1036,27 +1032,35 @@ Align(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
+                onPressed: loading ? null : () async {
+                  if (loading) return;   // extra safety
+                  await _submit();
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: () {
-                  d(widget.isEdit ? 'Update Task button CLICKED' : 'Create Task button CLICKED');
-                  _submit();
-                },
-                child: Text(
-                  widget.isEdit ? 'Update Task' : 'Create Task',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                
+                child: loading
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        widget.isEdit ? 'Update Task' : 'Create Task',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
-            ),
+            ),            
             
             
           ],
