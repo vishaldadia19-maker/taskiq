@@ -64,19 +64,35 @@ Future<void> _loginWithUsername() async {
   String? fcmToken;
 
   if (!kIsWeb) {
-    try {
-      //FirebaseMessaging.instance.requestPermission();
+  try {
+    final messaging = FirebaseMessaging.instance;
 
-      fcmToken = await FirebaseMessaging.instance
-          .getToken() 
-          .timeout(const Duration(seconds: 3));
+    // 🔥 Request permission FIRST
+    NotificationSettings settings =
+        await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
-      print("FCM TOKEN: $fcmToken");
-    } catch (e) {
-      print("FCM token error: $e");
+    print("🔔 Permission status: ${settings.authorizationStatus}");
+
+    if (settings.authorizationStatus ==
+        AuthorizationStatus.authorized) {
+
+      String? token = await messaging.getToken();
+      print("📲 LOGIN TOKEN: $token");
+
+      fcmToken = token;
+    } else {
+      print("❌ Notification permission not granted");
       fcmToken = null;
     }
+  } catch (e) {
+    print("FCM token error: $e");
+    fcmToken = null;
   }
+}
 
 
   final result = await AuthService().loginWithUsername(
