@@ -50,6 +50,15 @@ Future<Map<String, dynamic>> loginWithUsername({
 }
 
 
+Future<void> postDebug(Map<String, dynamic> data) async {
+  await http.post(
+    Uri.parse('${baseUrl}debug_log.php'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(data),
+  );
+}
+
+
 Future<void> updateFcmToken(int userId, String token) async {
   try {
     final response = await http.post(

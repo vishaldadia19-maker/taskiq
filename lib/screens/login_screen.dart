@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/auth_state.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import '../services/fcm_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -109,7 +110,13 @@ Future<void> _loginWithUsername() async {
     await prefs.setInt('user_id', result['user']['id']);
 
     AuthState.backendReady.value = true;
-    _updateFCMToken(result['user']['id']);
+    await FCMService.init(result['user']['id']);   
+
+    await AuthService().postDebug({
+      "step": "login_success",
+      "user": result['user']['id']
+    });     
+
 
 
   } else {
