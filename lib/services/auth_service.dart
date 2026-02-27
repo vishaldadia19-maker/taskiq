@@ -105,11 +105,11 @@ Future<void> updateFcmToken(int userId, String token) async {
 
     String? fcmToken;
 
-    if (!kIsWeb) {
-      await FirebaseMessaging.instance.requestPermission();
-      fcmToken = await FirebaseMessaging.instance.getToken();
-      debugPrint("📲 Google Login FCM: $fcmToken");
-    }
+   // if (!kIsWeb) {
+      // await FirebaseMessaging.instance.requestPermission();
+      // fcmToken = await FirebaseMessaging.instance.getToken();
+      // debugPrint("📲 Google Login FCM: $fcmToken");
+    // }
 
     final res = await http.post(
       Uri.parse('${baseUrl}auth_user.php'),

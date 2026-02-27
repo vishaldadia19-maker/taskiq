@@ -25,6 +25,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'participants_screen.dart';
 import 'notifications_screen.dart';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+import '../services/auth_service.dart';
 
 
 
@@ -148,8 +150,9 @@ Future<void> _initializeDashboard() async {
     
 //    _initializeDashboard();
 
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-        _initializeDashboard();
+     WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _initializeDashboard();
+        await _initFCM();   // 👈 ADD THIS LINE
       });    
 
 
@@ -172,6 +175,36 @@ Future<void> _initializeDashboard() async {
       }
     });
   }
+
+
+Future<void> _initFCM() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final int? userId = prefs.getInt('user_id');
+
+    if (userId == null) return;
+
+    final messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings =
+        await messaging.requestPermission();
+
+    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+      return;
+    }
+
+    String? token = await messaging.getToken();
+
+    if (token != null) {
+      await AuthService().updateFcmToken(userId, token);
+      debugPrint("✅ FCM Token Updated from Dashboard");
+    }
+
+  } catch (e) {
+    debugPrint("❌ FCM init error: $e");
+  }
+}
+
 
 Future<void> _refreshCurrentView() async {
   if (selectedIndex == 0 &&
