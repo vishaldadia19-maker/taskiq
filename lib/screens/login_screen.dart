@@ -47,6 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+
+
 Future<void> _loginWithUsername() async {
 
   if (_usernameController.text.trim().isEmpty ||
@@ -62,10 +64,20 @@ Future<void> _loginWithUsername() async {
   String? fcmToken;
 
   if (!kIsWeb) {
-    await FirebaseMessaging.instance.requestPermission();
-    fcmToken = await FirebaseMessaging.instance.getToken();
-    print("FCM TOKEN: $fcmToken");
+    try {
+      //FirebaseMessaging.instance.requestPermission();
+
+      fcmToken = await FirebaseMessaging.instance
+          .getToken() 
+          .timeout(const Duration(seconds: 3));
+
+      print("FCM TOKEN: $fcmToken");
+    } catch (e) {
+      print("FCM token error: $e");
+      fcmToken = null;
+    }
   }
+
 
   final result = await AuthService().loginWithUsername(
     username: _usernameController.text.trim(),
@@ -81,6 +93,8 @@ Future<void> _loginWithUsername() async {
     await prefs.setInt('user_id', result['user']['id']);
 
     AuthState.backendReady.value = true;
+    _updateFCMToken(result['user']['id']);
+
 
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -96,6 +110,34 @@ Future<void> _loginWithUsername() async {
     _passwordController.dispose();
     super.dispose();
   }
+
+
+
+Future<void> _updateFCMToken(int userId) async {
+  try {
+    final messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings =
+        await messaging.requestPermission();
+
+    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+      return;
+    }
+
+    String? token = await messaging
+        .getToken()
+        .timeout(const Duration(seconds: 5));
+
+    if (token != null) {
+      await AuthService().updateFcmToken(userId, token);
+    }
+
+  } catch (e) {
+    print("FCM update failed: $e");
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {

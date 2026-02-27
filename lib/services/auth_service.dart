@@ -10,6 +10,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 
 
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -48,6 +49,23 @@ Future<Map<String, dynamic>> loginWithUsername({
   }
 }
 
+
+Future<void> updateFcmToken(int userId, String token) async {
+  try {
+    final response = await http.post(
+      Uri.parse('${baseUrl}update_fcm_token.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'fcm_token': token,
+      }),
+    );
+
+    debugPrint("🔁 FCM update response: ${response.body}");
+  } catch (e) {
+    debugPrint("❌ FCM update API error: $e");
+  }
+}
 
 
   Future<void> signInWithGoogle() async {
