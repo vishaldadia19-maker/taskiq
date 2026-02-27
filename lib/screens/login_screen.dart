@@ -109,8 +109,9 @@ Future<void> _loginWithUsername() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', result['user']['id']);
 
-    AuthState.backendReady.value = true;
     await FCMService.init(result['user']['id']);   
+    AuthState.backendReady.value = true;
+    
 
     await AuthService().postDebug({
       "step": "login_success",
