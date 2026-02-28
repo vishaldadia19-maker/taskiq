@@ -116,7 +116,7 @@ Future<void> _loginWithUsername() async {
     });
 
     // 🔥 Init FCM
-    await FCMService.init(result['user']['id']);
+    FCMService.init(result['user']['id']); // remove await
 
     // 🔥 Debug after FCM
     await AuthService().postDebug({
