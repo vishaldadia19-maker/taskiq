@@ -109,17 +109,23 @@ Future<void> _loginWithUsername() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', result['user']['id']);
 
-    await FCMService.init(result['user']['id']);   
-    AuthState.backendReady.value = true;
-    
-
+    // 🔥 Debug before FCM
     await AuthService().postDebug({
-      "step": "login_success",
+      "step": "before_fcm_init",
       "user": result['user']['id']
-    });     
+    });
 
+    // 🔥 Init FCM
+    await FCMService.init(result['user']['id']);
 
+    // 🔥 Debug after FCM
+    await AuthService().postDebug({
+      "step": "after_fcm_init",
+      "user": result['user']['id']
+    });
 
+    // 🔥 ONLY NOW change state
+    AuthState.backendReady.value = true;
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(result['error'] ?? "Login failed")),

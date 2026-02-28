@@ -3,41 +3,60 @@ import 'package:flutter/foundation.dart';
 import 'auth_service.dart';
 
 class FCMService {
-  static Future<void> init(int userId) async {
-    try {
-      final messaging = FirebaseMessaging.instance;
 
-      await messaging.setAutoInitEnabled(true);
+static Future<void> init(int userId) async {
+  try {
+    final messaging = FirebaseMessaging.instance;
 
-      // 🔥 Ask permission (important for iOS)
-      NotificationSettings settings =
-          await messaging.requestPermission();
+    await debugToServer({"step": "init_start", "user": userId});
 
-      debugPrint("🔔 Permission: ${settings.authorizationStatus}");
+    await messaging.setAutoInitEnabled(true);
 
-      // 🔥 Check APNS token (iOS only)
-      String? apnsToken = await messaging.getAPNSToken();
-      debugPrint("🍎 APNS TOKEN: $apnsToken");
+    NotificationSettings settings =
+        await messaging.requestPermission();
 
-      // 🔥 Get FCM token
-      String? token = await messaging.getToken();
-      debugPrint("🔥 FCM TOKEN: $token");
+    await debugToServer({
+      "step": "permission_status",
+      "status": settings.authorizationStatus.toString()
+    });
 
-      if (token != null) {
-        await AuthService().updateFcmToken(userId, token);
-        debugPrint("✅ FCM token sent to backend");
-      }
+    String? apnsToken = await messaging.getAPNSToken();
 
-      // 🔥 Listen for token refresh
-      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-        await AuthService().updateFcmToken(userId, newToken);
-        debugPrint("🔄 FCM token refreshed");
-      });
+    await debugToServer({
+      "step": "apns_token",
+      "value": apnsToken
+    });
 
-    } catch (e) {
-      debugPrint("❌ FCM init error: $e");
+    String? token = await messaging.getToken();
+
+    await debugToServer({
+      "step": "fcm_token",
+      "value": token
+    });
+
+    if (token != null) {
+      await AuthService().updateFcmToken(userId, token);
+      await debugToServer({"step": "token_sent_to_backend"});
+    } else {
+      await debugToServer({"step": "token_null"});
     }
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      await AuthService().updateFcmToken(userId, newToken);
+      await debugToServer({
+        "step": "token_refreshed",
+        "value": newToken
+      });
+    });
+
+  } catch (e) {
+    await debugToServer({
+      "step": "init_error",
+      "error": e.toString()
+    });
   }
+}
+
 
 static Future<void> debugToServer(Map<String, dynamic> data) async {
   try {
@@ -45,5 +64,5 @@ static Future<void> debugToServer(Map<String, dynamic> data) async {
   } catch (_) {}
 }
 
-  
+
 }
