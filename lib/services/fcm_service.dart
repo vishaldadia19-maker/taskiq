@@ -20,14 +20,29 @@ static Future<void> init(int userId) async {
       "status": settings.authorizationStatus.toString()
     });
 
-    String? apnsToken = await messaging.getAPNSToken();
+    String? apnsToken;
+
+    for (int i = 0; i < 10; i++) {
+      apnsToken = await messaging.getAPNSToken();
+      if (apnsToken != null) break;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    await debugToServer({
+      "step": "apns_token_after_wait",
+      "value": apnsToken
+    });
 
     await debugToServer({
       "step": "apns_token",
       "value": apnsToken
     });
 
-    String? token = await messaging.getToken();
+    String? token;
+
+    if (apnsToken != null) {
+      token = await messaging.getToken();
+    }    
 
     await debugToServer({
       "step": "fcm_token",
