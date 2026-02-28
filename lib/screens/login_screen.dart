@@ -3,9 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
-import '../services/fcm_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,71 +60,27 @@ Future<void> _loginWithUsername() async {
 
   setState(() => isLoading = true);
 
-  String? fcmToken;
-
-  if (!kIsWeb) {
-  try {
-    final messaging = FirebaseMessaging.instance;
-
-    // 🔥 Request permission FIRST
-    NotificationSettings settings =
-        await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    print("🔔 Permission status: ${settings.authorizationStatus}");
-
-    if (settings.authorizationStatus ==
-        AuthorizationStatus.authorized) {
-
-      String? token = await messaging.getToken();
-      print("📲 LOGIN TOKEN: $token");
-
-      fcmToken = token;
-    } else {
-      print("❌ Notification permission not granted");
-      fcmToken = null;
-    }
-  } catch (e) {
-    print("FCM token error: $e");
-    fcmToken = null;
-  }
-}
-
 
   final result = await AuthService().loginWithUsername(
     username: _usernameController.text.trim(),
-    password: _passwordController.text,
-    fcmToken: fcmToken, // 👈 send token here
+    password: _passwordController.text,    
   );
 
   setState(() => isLoading = false);
 
   if (result['success'] == true) {
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('user_id', result['user']['id']);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('user_id', result['user']['id']);
 
-    // 🔥 Debug before FCM
-    await AuthService().postDebug({
-      "step": "before_fcm_init",
-      "user": result['user']['id']
-    });
+      AuthState.backendReady.value = true;
 
-    // 🔥 Init FCM
-    FCMService.init(result['user']['id']); // remove await
-
-    // 🔥 Debug after FCM
-    await AuthService().postDebug({
-      "step": "after_fcm_init",
-      "user": result['user']['id']
-    });
-
-    // 🔥 ONLY NOW change state
-    AuthState.backendReady.value = true;
-  } else {
+      await AuthService().postDebug({
+        "step": "login_success",
+        "user": result['user']['id']
+      });
+  }
+  else {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(result['error'] ?? "Login failed")),
     );
@@ -142,30 +96,6 @@ Future<void> _loginWithUsername() async {
   }
 
 
-
-Future<void> _updateFCMToken(int userId) async {
-  try {
-    final messaging = FirebaseMessaging.instance;
-
-    NotificationSettings settings =
-        await messaging.requestPermission();
-
-    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
-      return;
-    }
-
-    String? token = await messaging
-        .getToken()
-        .timeout(const Duration(seconds: 5));
-
-    if (token != null) {
-      await AuthService().updateFcmToken(userId, token);
-    }
-
-  } catch (e) {
-    print("FCM update failed: $e");
-  }
-}
 
 
 

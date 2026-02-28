@@ -27,7 +27,7 @@ import 'notifications_screen.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/auth_service.dart';
-
+import '../services/fcm_service.dart';
 
 
 
@@ -147,6 +147,9 @@ Future<void> _initializeDashboard() async {
   @override
   void initState() {
     super.initState();
+
+    _initFCM();
+
     
 //    _initializeDashboard();
 
@@ -176,6 +179,14 @@ Future<void> _initializeDashboard() async {
   }
 
 
+
+Future<void> _initFCM() async {
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getInt('user_id');
+  if (userId != null) {
+    FCMService.init(userId); // no await
+  }
+}
 
 
 
