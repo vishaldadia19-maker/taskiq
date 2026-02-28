@@ -1,10 +1,11 @@
 import Flutter
 import UIKit
-import UserNotifications
 import Firebase
+import FirebaseMessaging
+import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
 
   override func application(
     _ application: UIApplication,
@@ -13,14 +14,21 @@ import Firebase
 
     FirebaseApp.configure()
 
-    // 🔥 Set notification delegate
     UNUserNotificationCenter.current().delegate = self
+    Messaging.messaging().delegate = self
 
-    // 🔥 Register for remote notifications
     application.registerForRemoteNotifications()
 
     GeneratedPluginRegistrant.register(with: self)
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
 }
