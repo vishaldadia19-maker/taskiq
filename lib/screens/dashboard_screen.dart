@@ -24,6 +24,7 @@ import '../services/auth_state.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'participants_screen.dart';
 import 'notifications_screen.dart';
+import 'task_detail_screen.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/auth_service.dart';
@@ -1917,6 +1918,21 @@ Widget _normalHeader() {
             );
           }
           
+          if (value == 'Task Screen') {
+
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TaskDetailScreen(
+                  taskId: 75,
+                  userId: 2,
+                ),
+              ),
+            );
+
+
+          }
+
 
 
           if (value == 'completed') {
@@ -2017,6 +2033,18 @@ Widget _normalHeader() {
               ],
             ),
           ),
+
+          PopupMenuItem(
+            value: 'Task Screen',
+            child: Row(
+              children: [
+                Icon(Icons.group_outlined, size: 18),
+                SizedBox(width: 8),
+                Text('Task Screen'),
+              ],
+            ),
+          ),
+
 
 
           const PopupMenuDivider(),

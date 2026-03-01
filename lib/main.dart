@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,6 +9,13 @@ import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'services/auth_state.dart';
+import 'screens/notifications_screen.dart';
+
+
+
+
+final GlobalKey<NavigatorState> navigatorKey =
+    GlobalKey<NavigatorState>();
 
 
 void main() async {
@@ -17,6 +25,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await _setupNotificationTapHandling(); // 👈 ADD THIS
+
+
   if (kIsWeb) {
     await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
     await FirebaseAuth.instance.getRedirectResult();
@@ -25,15 +36,43 @@ void main() async {
   runApp(const MyApp());
 }
 
+
+Future<void> _setupNotificationTapHandling() async {
+  // When app is in background
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      "/notifications",
+      (route) => false,
+    );
+  });
+
+  // When app is terminated
+  final initialMessage =
+      await FirebaseMessaging.instance.getInitialMessage();
+
+  if (initialMessage != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        "/notifications",
+        (route) => false,
+      );
+    });
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthGate(),
-    );
+      navigatorKey: navigatorKey,
+      routes: {
+      "/notifications": (context) => const NotificationsScreen(),
+      },
+      home: const AuthGate(),
+    );    
   }
 }
 
