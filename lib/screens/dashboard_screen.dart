@@ -1918,22 +1918,6 @@ Widget _normalHeader() {
             );
           }
           
-          if (value == 'Task Screen') {
-
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TaskDetailScreen(
-                  taskId: 75,
-                  userId: 2,
-                ),
-              ),
-            );
-
-
-          }
-
-
 
           if (value == 'completed') {
             setState(() {
@@ -2033,18 +2017,6 @@ Widget _normalHeader() {
               ],
             ),
           ),
-
-          PopupMenuItem(
-            value: 'Task Screen',
-            child: Row(
-              children: [
-                Icon(Icons.group_outlined, size: 18),
-                SizedBox(width: 8),
-                Text('Task Screen'),
-              ],
-            ),
-          ),
-
 
 
           const PopupMenuDivider(),
