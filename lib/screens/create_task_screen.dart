@@ -8,6 +8,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/log_service.dart';
+
 
 class CreateTaskScreen extends StatefulWidget {
 
@@ -63,10 +65,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   String assignType = 'SELF'; // SELF | PARTICIPANTS
   String priority = 'NORMAL';
-  String recurrence = 'ONE_TIME';
 
+  String recurrence = 'ONE_TIME';
   DateTime? deadline;
   int? userId;
+
+  String workType = 'TASK'; // TASK | LOG
+  DateTime? completionDate;  
 
   final List<int> watchers = [];
 
@@ -77,6 +82,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     _loadUserId();
 
     weeklyDays = [];
+    completionDate = DateTime.now();    
 
     
 
@@ -328,7 +334,9 @@ Future<void> _pickDeadline() async {
     }
     
 
-    if (deadlineType == 'DATE' && selectedDeadline == null) {
+    if (workType == 'TASK' &&
+      deadlineType == 'DATE' &&
+      selectedDeadline == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select deadline')),
       );
@@ -336,8 +344,9 @@ Future<void> _pickDeadline() async {
     }
 
 
-      if (assignType == 'PARTICIPANTS' &&
-      selectedParticipants.isEmpty) {
+    if (workType == 'TASK' &&
+        assignType == 'PARTICIPANTS' &&
+        selectedParticipants.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please assign at least one user')),
       );
@@ -346,14 +355,21 @@ Future<void> _pickDeadline() async {
 
     setState(() => loading = true);
 
-    DateTime finalDeadline =
-        deadlineType == 'IMMEDIATE'
-            ? DateTime.now()
-            : selectedDeadline!;    
+    DateTime finalDeadline;
+
+    if (workType == 'TASK') {
+      finalDeadline = deadlineType == 'IMMEDIATE'
+          ? DateTime.now()
+          : selectedDeadline!;
+    } else {
+      finalDeadline = completionDate ?? DateTime.now();
+    }      
 
     debugPrint('🟢 Show Daily: $showDailyUntilDone');
 
-    if (recurrenceType == 'weekly' && weeklyDays.isEmpty) {
+    if (workType == 'TASK' &&
+      recurrenceType == 'weekly' &&
+      weeklyDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one weekday')),
       );
@@ -361,14 +377,17 @@ Future<void> _pickDeadline() async {
     }
 
 
+    Map<String, dynamic> result;
 
+  if (workType == 'TASK') {
 
-    final result = widget.isEdit
+    result = widget.isEdit
         ? await TaskService.updateTask(
             taskId: int.parse(widget.task!['task_id'].toString()),
             title: _titleCtrl.text,
             description: _descCtrl.text,
             priority: priority,
+            workType: workType,
             deadline: finalDeadline.toIso8601String(),
             categoryId: selectedCategoryId,
             showDailyUntilDone: showDailyUntilDone,
@@ -395,6 +414,7 @@ Future<void> _pickDeadline() async {
               description: _descCtrl.text,
               taskType: assignType,
               priority: priority,
+              workType: workType,
 
               recurrenceType: recurrenceType,
               recurrenceDays: recurrenceType == 'weekly'
@@ -421,7 +441,29 @@ Future<void> _pickDeadline() async {
               categoryId: selectedCategoryId,
               showDailyUntilDone: showDailyUntilDone,
           );
-        
+    } else {
+  // 🔥 LOG WORK
+  result = await LogService.createLog(
+    title: _titleCtrl.text,
+    description: _descCtrl.text,
+    taskType: assignType,
+    createdBy: userId!,
+    categoryId: selectedCategoryId,
+    completionDate:
+        DateFormat('yyyy-MM-dd HH:mm:ss')
+            .format(completionDate ?? DateTime.now()),
+    assignees: assignType == 'SELF'
+        ? []
+        : selectedParticipants
+            .where((u) => u['role'] == 'DOER')
+            .map((u) => u['id'] as int)
+            .toList(),
+    watchers: selectedParticipants
+        .where((u) => u['role'] == 'VIEWER')
+        .map((u) => u['id'] as int)
+        .toList(),
+  );
+}
     
 
     setState(() => loading = false);
@@ -575,6 +617,63 @@ Widget _recurrenceChip(String value, String label) {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+
+// ================= WORK TYPE =================
+
+Align(
+  alignment: Alignment.centerLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Work Type',
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+      const SizedBox(height: 8),
+      ToggleButtons(
+        borderRadius: BorderRadius.circular(14),
+        selectedColor: Colors.white,
+        fillColor: Colors.green,
+        color: Colors.black,
+        isSelected: [
+          workType == 'TASK',
+          workType == 'LOG',
+        ],
+        onPressed: (index) {
+          setState(() {
+            workType = index == 0 ? 'TASK' : 'LOG';
+
+            if (workType == 'LOG') {
+              recurrenceType = 'none';
+              weeklyDays.clear();
+              deadlineType = 'IMMEDIATE';
+              completionDate = DateTime.now();
+              selectedDeadline = null;
+            }
+          });
+        },
+        children: const [
+          SizedBox(
+            width: 120,
+            child: Center(child: Text('Task')),
+          ),
+          SizedBox(
+            width: 120,
+            child: Center(child: Text('Log Work')),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
+
+const SizedBox(height: 16),
+
+// ================= END WORK TYPE =================
+
 
 
 Card(
@@ -815,8 +914,9 @@ if (assignType == 'PARTICIPANTS')
 
 
 
-            const SizedBox(height: 20), // 👈 ADD THIS
 
+
+            if (workType == 'TASK')...[
 
             DropdownButtonFormField(
               value: priority,
@@ -834,9 +934,11 @@ if (assignType == 'PARTICIPANTS')
               ),
               
             ),
+              const SizedBox(height: 16),
+            ],
 
-            const SizedBox(height: 16),
 
+            if (workType == 'TASK')
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -853,7 +955,6 @@ if (assignType == 'PARTICIPANTS')
                   ),
                 ),
                 
-
                 const SizedBox(height: 8),
 
                 // 🔹 Deadline Type Selector (modern replacement for radio)
@@ -916,9 +1017,53 @@ Align(
               ],
             ),
 
-
+            if (workType == 'TASK')
             const SizedBox(height: 16),
 
+if (workType == 'LOG') ...[
+  const SizedBox(height: 16),
+  const Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      'Completion Date',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: Colors.black87,
+      ),
+    ),
+  ),
+  const SizedBox(height: 8),
+  ListTile(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.grey.shade300),
+    ),
+    leading: const Icon(Icons.check_circle_outline),
+    title: Text(
+      DateFormat('dd MMM yyyy')
+          .format(completionDate ?? DateTime.now()),
+    ),
+    trailing: const Icon(Icons.chevron_right),
+    onTap: () async {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: completionDate ?? DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+      );
+
+      if (picked != null) {
+        setState(() {
+          completionDate = picked;
+        });
+      }
+    },
+  ),
+],
+
+
+            if (workType == 'TASK')
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -1052,7 +1197,9 @@ Align(
                         ),
                       )
                     : Text(
-                        widget.isEdit ? 'Update Task' : 'Create Task',
+                        widget.isEdit
+                            ? (workType == 'TASK' ? 'Update Task' : 'Update Log')
+                            : (workType == 'TASK' ? 'Create Task' : 'Log Work'),                    
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,

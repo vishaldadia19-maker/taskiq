@@ -158,6 +158,12 @@ Future<void> _initializeDashboard() async {
         await _initializeDashboard();
       });    
 
+    @override
+    void didChangeDependencies() {
+      super.didChangeDependencies();
+      _loadNotificationsBadge();
+    }
+
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
@@ -337,6 +343,10 @@ Future<void> _loadActionTasks({bool reset = false}) async {
   }
 
   setState(() => isLoading = false);
+
+  // 🔔 Refresh badge after tasks load
+  await _loadNotificationsBadge();
+
 }
 
 
@@ -2434,6 +2444,10 @@ Widget _buildFriendlyEmptyState() {
     }
 
     setState(() => isLoading = false);
+
+    // 🔔 Refresh badge
+    await _loadNotificationsBadge();
+
   }
 
   @override

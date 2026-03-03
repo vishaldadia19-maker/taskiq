@@ -13,6 +13,7 @@ class TaskService {
   required String description,
   required String taskType,
   required String priority,
+  required String workType,
 
   required String recurrenceType,
   String? recurrenceDays,
@@ -59,6 +60,7 @@ class TaskService {
     required String title,
     String? description,
     required String priority,
+    required String workType,
     required String deadline,
     int? categoryId,
     required bool showDailyUntilDone,
@@ -85,6 +87,7 @@ class TaskService {
         'title': title,
         'description': description ?? '',
         'priority': priority,
+        'work_type': workType,
         'deadline': deadline,
         'category_id': categoryId,
         'show_daily_until_done': showDailyUntilDone ? 1 : 0,
