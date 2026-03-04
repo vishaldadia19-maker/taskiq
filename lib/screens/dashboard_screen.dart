@@ -25,10 +25,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'participants_screen.dart';
 import 'notifications_screen.dart';
 import 'task_detail_screen.dart';
+import 'completed_tasks_screen.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/auth_service.dart';
 import '../services/fcm_service.dart';
+
 
 
 
@@ -1930,16 +1932,20 @@ Widget _normalHeader() {
           
 
           if (value == 'completed') {
-            setState(() {
-              isDailyMode = false;
-              selectedIndex = 0; // All Due
-              isCompletedView = true;   // ✅ ADD THIS
-              tasks.clear();
-              offset = 0;
-              hasMore = true;
-            });
 
-            await _loadCompletedTasks(reset: true);
+              final refreshed = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CompletedTasksScreen(
+                    userId: userId!,
+                  ),
+                ),
+              );
+
+              if (refreshed == true) {
+                await _refreshCurrentView();
+              }            
+
           }
 
           if (value == 'daily') {

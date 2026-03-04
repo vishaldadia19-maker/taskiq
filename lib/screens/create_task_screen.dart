@@ -98,6 +98,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       }
       
       priority = t['priority'] ?? 'NORMAL';
+
+      workType = t['work_type'] ?? 'TASK';
       
       assignType = t['task_type'] ?? 'SELF';
 

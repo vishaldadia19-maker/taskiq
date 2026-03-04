@@ -5,11 +5,14 @@ class TaskCompletedListService {
   static const String apiUrl =
       'https://backoffice.thecubeclub.co/task_apis/task_completed_list.php';
 
-  static Future<Map<String, dynamic>> fetchCompletedTasks({
-    required int userId,
-    required int offset,
-    int limit = 10,
-  }) async {
+static Future<Map<String, dynamic>> fetchCompletedTasks({
+  required int userId,
+  required int offset,
+  int limit = 10,
+  String? fromDate,
+  String? toDate,
+  int? categoryId,
+}) async {
     final response = await http.post(
       Uri.parse(apiUrl),
       headers: {'Content-Type': 'application/json'},
@@ -17,7 +20,10 @@ class TaskCompletedListService {
         'user_id': userId,
         'limit': limit,
         'offset': offset,
-      }),
+        'from_date': fromDate,
+        'to_date': toDate,
+        'category_id': categoryId,
+      }),      
     );
 
     return jsonDecode(response.body);
