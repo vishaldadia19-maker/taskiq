@@ -50,7 +50,9 @@ class _ParticipantsScreenState extends State<ParticipantsScreen> {
       debugPrint("Error loading collaborations: $e");
     }
 
-    setState(() => isLoading = false);
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
   }
 
   Color _statusColor(String status, int requestedBy) {
@@ -79,7 +81,14 @@ Widget _buildTile(Map item) {
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
-    ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        )
+      ],
+    ),    
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -168,13 +177,13 @@ Widget _statusDot(String status, int requestedBy) {
   String label;
 
   if (status == 'APPROVED') {
-    color = Colors.green;
+    color = Colors.green.shade600;
     label = "Approved";
   } else if (requestedBy == widget.userId) {
-    color = Colors.orange;
+    color = Colors.orange.shade600;
     label = "Pending";
   } else {
-    color = Colors.blue;
+    color = Colors.blue.shade600;
     label = "Incoming";
   }
 
@@ -317,183 +326,139 @@ Widget _compactAction(
 
 
 
-Widget _buildBetterActions(
-  Map item,
-  bool isApproved,
-  bool isPending,
-  bool isIncoming,
-) {
-  if (isApproved) {
-    return TextButton(
-      onPressed: () {
-        // remove api
-      },
-      child: const Text(
-        "Remove",
-        style: TextStyle(color: Colors.red),
-      ),
-    );
-  }
-
-  if (isPending) {
-    return TextButton(
-      onPressed: () {
-        // cancel api
-      },
-      child: const Text("Cancel"),
-    );
-  }
-
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      TextButton(
-        onPressed: () {
-          // reject api
-        },
-        child: const Text("Reject"),
-      ),
-      const SizedBox(width: 6),
-      ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        onPressed: () {
-          // approve api
-        },
-        child: const Text(
-          "Approve",
-          style: TextStyle(fontSize: 12),
-        ),
-      ),
-    ],
-  );
-}
 
 
-Widget _statusBadge(String status, int requestedBy) {
-  Color color;
-  String label;
 
-  if (status == 'APPROVED') {
-    color = Colors.green;
-    label = "Approved";
-  } else if (requestedBy == widget.userId) {
-    color = Colors.orange;
-    label = "Pending";
-  } else {
-    color = Colors.blue;
-    label = "Requested You";
-  }
-
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      label,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: color,
-      ),
-    ),
-  );
-}
   
 
-  Widget _buildActions(Map item) {
-    final status = item['status'];
-    final requestedBy = item['requested_by'];
-
-    if (status == 'APPROVED') {
-      return TextButton(
-        onPressed: () {
-          // TODO: Remove collaborator API
-        },
-        child: const Text("Remove"),
-      );
-    }
-
-    if (status == 'PENDING' && requestedBy == widget.userId) {
-      return TextButton(
-        onPressed: () {
-          // TODO: Cancel request API
-        },
-        child: const Text("Cancel"),
-      );
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+Widget _benefit(String text) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-        TextButton(
-          onPressed: () async {
-            final res = await CollaborationService.rejectRequest(
-              userId: widget.userId,
-              collaborationId: item['collaboration_id'],
-            );
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(res['message'] ?? 'Updated')),
-            );
-
-            if (res['status'] == true) {
-              _loadCollaborations(); // refresh list
-            }
-          },
-          child: const Text("Reject"),
+        const Icon(
+          Icons.check_circle,
+          size: 18,
+          color: Colors.green,
         ),
-
-        
-        ElevatedButton(
-          onPressed: () async {
-            final response = await CollaborationService.approveCollaboration(
-              userId: widget.userId,
-              collaborationId: item['collaboration_id'],
-            );
-
-            if (response["status"] == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(response["message"])),
-              );
-
-              _loadCollaborations(); // refresh list
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(response["message"] ?? "Failed")),
-              );
-            }
-          },
-          child: const Text("Approve"),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade700,
+            ),
+          ),
         ),
-        
       ],
-    );
-  }
+    ),
+  );
+}
+
+Widget _buildEmptyState() {
+  return SingleChildScrollView(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Icon(
+            Icons.groups_rounded,
+            size: 70,
+            color: Colors.grey.shade300,
+          ),
+
+          const SizedBox(height: 20),
+
+          const Text(
+            "Work With Others",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            "Add people you work with.\n"
+            "Share tasks and stay updated on progress.",
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          _benefit("Share tasks with your team"),
+          _benefit("See progress in real time"),
+          _benefit("Stay aligned on work"),
+
+          const SizedBox(height: 24),
+
+          ElevatedButton.icon(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SearchParticipantScreen(userId: widget.userId),
+                ),
+              );
+
+              _loadCollaborations();
+            },
+            icon: const Icon(Icons.person_add_alt_1),
+            label: const Text("Add Person"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),            
+          ),
+
+          const SizedBox(height: 12),
+
+          Text(
+            "Tip: The person will receive a request to join.",
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Participants"),
-      ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),      
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : collaborations.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No collaborators yet.",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                )
+              ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: _loadCollaborations,
                   child: ListView.builder(
@@ -504,19 +469,21 @@ Widget _statusBadge(String status, int requestedBy) {
                   ),
                 ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
         onPressed: () async {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  SearchParticipantScreen(userId: widget.userId),
+              builder: (_) => SearchParticipantScreen(userId: widget.userId),
             ),
           );
-
-          _loadCollaborations(); // refresh after coming back
+          _loadCollaborations();
         },
-        child: const Icon(Icons.person_add_alt_1),
-      ),
+        child: const Icon(
+          Icons.person_add_alt_1,
+          color: Colors.white,
+        ),
+      ),      
     );
   }
 }

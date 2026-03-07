@@ -1440,7 +1440,7 @@ Widget _taskTile(Map task) {
                     Expanded(
                       child: Text(
                         title,
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 15,
@@ -1497,7 +1497,7 @@ Widget _taskTile(Map task) {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       task['description'],
-                      maxLines: 1,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
