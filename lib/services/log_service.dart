@@ -36,4 +36,39 @@ class LogService {
 
     return jsonDecode(response.body);
   }
+
+  static Future<Map<String, dynamic>> updateLog({
+    required int logId,
+    required String title,
+    required String description,
+    required String taskType,
+    required int? categoryId,
+    required String completionDate,
+    required List<int> assignees,
+    required List<int> watchers,
+  }) async {
+
+    final url = Uri.parse("${baseUrl}update_log.php");
+
+    final body = {
+      "log_id": logId,
+      "title": title,
+      "description": description,
+      "task_type": taskType,
+      "category_id": categoryId,
+      "completion_date": completionDate,
+      "assignees": assignees,
+      "watchers": watchers,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    return jsonDecode(response.body);
+  }  
+
+ 
 }

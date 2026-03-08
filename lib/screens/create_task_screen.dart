@@ -444,27 +444,52 @@ Future<void> _pickDeadline() async {
               showDailyUntilDone: showDailyUntilDone,
           );
     } else {
-  // 🔥 LOG WORK
-  result = await LogService.createLog(
-    title: _titleCtrl.text,
-    description: _descCtrl.text,
-    taskType: assignType,
-    createdBy: userId!,
-    categoryId: selectedCategoryId,
-    completionDate:
-        DateFormat('yyyy-MM-dd HH:mm:ss')
-            .format(completionDate ?? DateTime.now()),
-    assignees: assignType == 'SELF'
-        ? []
-        : selectedParticipants
-            .where((u) => u['role'] == 'DOER')
-            .map((u) => u['id'] as int)
-            .toList(),
-    watchers: selectedParticipants
-        .where((u) => u['role'] == 'VIEWER')
-        .map((u) => u['id'] as int)
-        .toList(),
-  );
+          // 🔥 LOG WORK
+          if (widget.isEdit) {
+
+              result = await LogService.updateLog(
+                  logId: int.parse(widget.task!['task_id'].toString()),
+                  title: _titleCtrl.text,
+                  description: _descCtrl.text,
+                  taskType: assignType,
+                  categoryId: selectedCategoryId,
+                  completionDate: DateFormat('yyyy-MM-dd HH:mm:ss')
+                      .format(completionDate ?? DateTime.now()),
+                  assignees: assignType == 'SELF'
+                      ? []
+                      : selectedParticipants
+                          .where((u) => u['role'] == 'DOER')
+                          .map((u) => u['id'] as int)
+                          .toList(),
+                  watchers: selectedParticipants
+                      .where((u) => u['role'] == 'VIEWER')
+                      .map((u) => u['id'] as int)
+                      .toList(),
+                );                    
+
+
+          } else {
+            result = await LogService.createLog(
+              title: _titleCtrl.text,
+              description: _descCtrl.text,
+              taskType: assignType,
+              createdBy: userId!,
+              categoryId: selectedCategoryId,
+              completionDate:
+                  DateFormat('yyyy-MM-dd HH:mm:ss')
+                      .format(completionDate ?? DateTime.now()),
+              assignees: assignType == 'SELF'
+                  ? []
+                  : selectedParticipants
+                      .where((u) => u['role'] == 'DOER')
+                      .map((u) => u['id'] as int)
+                      .toList(),
+              watchers: selectedParticipants
+                  .where((u) => u['role'] == 'VIEWER')
+                  .map((u) => u['id'] as int)
+                  .toList(),
+            );
+          }
 }
     
 
