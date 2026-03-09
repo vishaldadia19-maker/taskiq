@@ -643,6 +643,9 @@ Widget _taskTile(Map task) {
       recurrenceType.isNotEmpty &&
       recurrenceType != 'none';
 
+  final completedByName = task['creator']?['name'];
+
+
   final int recurrenceInterval =
       int.tryParse(task['recurrence_interval']?.toString() ?? '1') ?? 1;
 
@@ -788,24 +791,22 @@ Widget _taskTile(Map task) {
                   const Text(' • '),
 
                   if (categoryName != null) ...[
-                    Flexible(
-                      child: Text(
+                      Text(
                         categoryName,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
                         ),
-                      ),
-                    ),
+                      ),                  
                     const Text(' • '),
                   ],
 
-                  Flexible(
+                  Expanded(
                     child: Text(
                       nextDueDate != null
-                          ? 'Completed ${formatExtendedDate(task['completed_at'])} • Next ${formatDueDate(nextDueDate)}'
-                          : 'Completed ${formatDueDate(task['completed_at'])}',
+                          ? 'Completed by $completedByName • ${formatExtendedDate(task['completed_at'])} • Next ${formatDueDate(nextDueDate)}'
+                          : 'Completed by $completedByName • ${formatExtendedDate(task['completed_at'])}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -813,7 +814,7 @@ Widget _taskTile(Map task) {
                         color: Colors.green,
                       ),
                     ),
-                  ),
+                  ),              
                 ],
               ),
 

@@ -1070,15 +1070,14 @@ return FilterChip(
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
+                      
                       onPressed: () async {
                         Navigator.pop(context);
 
                         setState(() {
-                          selectedIndex = 0;
-
-                          isCompletedView = false;
-                          isAllRecordsMode = false;
                           isDailyMode = false;
+                          isCompletedView = false;
+                          isAllRecordsMode = true; // 🔥 IMPORTANT
 
                           tasks.clear();
                           actionTodayTasks.clear();
@@ -1088,8 +1087,9 @@ return FilterChip(
                           hasMore = true;
                         });
 
-                        await _loadActionTasks(reset: true);
-                      },
+                        await _loadAllRecords(reset: true);
+                      },                                                              
+
                       child: const Text('Apply Filters'),
                     ),
                   ),
@@ -2230,6 +2230,10 @@ Future<void> _loadAllRecords({bool reset = false}) async {
         'user_id': userId,
         'limit': 30,
         'offset': offset,
+        'delegate_ids': selectedDelegateIds,
+        'priorities': filterPriority,
+        'category_ids': selectedCategoryIds,
+        'search': searchQuery.isNotEmpty ? searchQuery : null,        
       }),
     );
 
