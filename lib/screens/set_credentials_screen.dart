@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import 'dashboard_screen.dart';
 
 class SetCredentialsScreen extends StatefulWidget {
   const SetCredentialsScreen({super.key});
@@ -108,15 +109,29 @@ class _SetCredentialsScreenState
     setState(() => isLoading = false);
 
     if (result['success'] == true) {
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // ⭐ SAVE USERNAME LOCALLY
+      await prefs.setString(
+        'username',
+        _usernameController.text.trim(),
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Credentials saved successfully')),
       );
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['error'] ?? 'Something went wrong')),
+
+      // ⭐ NAVIGATE TO DASHBOARD
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const DashboardScreen(),
+        ),
+        (route) => false,
       );
     }
+    
   }
 
   @override
@@ -166,7 +181,7 @@ class _SetCredentialsScreenState
             const SizedBox(height: 10),
 
             const Text(
-              "Create your login credentials (Optional)",
+              "Create your login credentials",
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
@@ -176,12 +191,13 @@ class _SetCredentialsScreenState
             const SizedBox(height: 6),
 
             Text(
-              "You only need this if you want to log in without Google.",
+              "Create a username and password for your account.\nYou can log in with these credentials & also Log in with Google.",
+              textAlign: TextAlign.left,
               style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
+                fontSize: 14,
+                color: Colors.black54,
               ),
-            ),
+            ),          
             
 
             const SizedBox(height: 24),

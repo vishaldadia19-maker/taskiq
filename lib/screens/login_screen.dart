@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/auth_state.dart';
+import 'dashboard_screen.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -73,7 +74,26 @@ Future<void> _loginWithUsername() async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('user_id', result['user']['id']);
 
+      final username = result['user']['username'];
+
+      // ⭐ SAVE USERNAME
+      await prefs.setString(
+        'username',
+        result['user']['username'] ?? '',
+      );      
+
       AuthState.backendReady.value = true;
+
+      if (!mounted) return;
+
+       Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardScreen(),
+          ),
+        );      
+
+
 
       await AuthService().postDebug({
         "step": "login_success",
@@ -147,7 +167,7 @@ Row(
                   height: 52,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await AuthService().signInWithGoogle();
+                      await AuthService().signInWithGoogle();                                       
                     },
                     icon: const FaIcon(
                       FontAwesomeIcons.google,

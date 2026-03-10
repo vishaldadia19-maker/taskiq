@@ -602,9 +602,43 @@ void _openFilterSheet() {
               const Divider(height: 1, thickness: 0.6),
           itemBuilder: (context, index) {
 
-            if (index < tasks.length) {
-              return _taskTile(tasks[index]);
-            }
+if (index < tasks.length) {
+
+  final task = tasks[index];
+  final group = getTaskGroup(task['completed_at']);
+
+  String? previousGroup;
+
+  if (index > 0) {
+    previousGroup =
+        getTaskGroup(tasks[index - 1]['completed_at']);
+  }
+
+  final showHeader = index == 0 || group != previousGroup;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+
+      if (showHeader)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+          child: Text(
+            group,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+
+      _taskTile(task),
+
+      const Divider(height: 1, thickness: 0.6),
+    ],
+  );
+}            
 
             if (hasMore) {
               return const Padding(
@@ -645,6 +679,11 @@ Widget _taskTile(Map task) {
 
   final completedByName = task['creator']?['name'];
 
+  final int? creatorId = task['creator']?['user_id'];
+  final int? completedById = task['completed_by']?['user_id'];  
+
+  final bool canModify =
+      widget.userId == creatorId || widget.userId == completedById;
 
   final int recurrenceInterval =
       int.tryParse(task['recurrence_interval']?.toString() ?? '1') ?? 1;
@@ -760,7 +799,7 @@ Widget _taskTile(Map task) {
               if ((task['description'] ?? '').toString().isNotEmpty)
                 Text(
                   task['description'],
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
@@ -805,8 +844,8 @@ Widget _taskTile(Map task) {
                   Expanded(
                     child: Text(
                       nextDueDate != null
-                          ? 'Completed by $completedByName • ${formatExtendedDate(task['completed_at'])} • Next ${formatDueDate(nextDueDate)}'
-                          : 'Completed by $completedByName • ${formatExtendedDate(task['completed_at'])}',
+                          ? '✓ $completedByName • ${formatExtendedDate(task['completed_at'])} • Next ${formatDueDate(nextDueDate)}'
+                          : '✓ $completedByName • ${formatExtendedDate(task['completed_at'])}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -856,6 +895,7 @@ Widget _taskTile(Map task) {
           
 
         /// MENU
+        if (canModify)
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert, size: 18),
 
@@ -921,6 +961,22 @@ Widget _taskTile(Map task) {
     ),
   );
 }
+}
+
+String getTaskGroup(String date) {
+  final completed = DateTime.parse(date).toLocal();
+  final now = DateTime.now();
+
+  if (DateUtils.isSameDay(completed, now)) {
+    return "Today";
+  }
+
+  if (DateUtils.isSameDay(
+      completed, now.subtract(const Duration(days: 1)))) {
+    return "Yesterday";
+  }
+
+  return "Older";
 }
 
 Color _recurrenceColor(String? type) {

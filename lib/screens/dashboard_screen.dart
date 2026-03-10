@@ -31,7 +31,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/auth_service.dart';
 import '../services/fcm_service.dart';
 
-
+import 'login_screen.dart';
 
 
 
@@ -76,6 +76,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Map<String, dynamic>> categories = [];
   List<int> selectedCategoryIds = [];
   bool isCategoryLoading = false;
+
+  List<int> selectedParticipantIds = [];
 
   bool isSearching = false;
   TextEditingController searchController = TextEditingController();
@@ -141,6 +143,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 Future<void> _initializeDashboard() async {
   await _loadUserAndLoadTasks();
+  await _checkCredentialsSetup();   // ⭐ ADD THIS
+
+  await _loadDelegates(); // 👈 ADD THIS
+
+
   await _loadActionTasks(reset: true);
   await _loadNotificationsBadge();   // 🔔 ADD THIS
 
@@ -286,6 +293,8 @@ Future<void> _loadNotificationsBadge() async {
     }
 
 
+
+
 Future<void> _loadActionTasks({bool reset = false}) async {
   if (isLoading) return;
 
@@ -350,6 +359,23 @@ Future<void> _loadActionTasks({bool reset = false}) async {
   await _loadNotificationsBadge();
 
 }
+
+Future<void> _checkCredentialsSetup() async {
+
+  final prefs = await SharedPreferences.getInstance();
+
+  final username = prefs.getString('username') ?? '';
+
+  if (username.isEmpty) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SetCredentialsScreen(),
+      ),
+    );
+  }
+}
+
 
 
 
@@ -1842,6 +1868,106 @@ Widget _categoryStrip() {
   );
 }
 
+
+Widget _participantStrip() {
+
+  final filteredDelegates = delegates
+      .where((d) => int.parse(d['user_id'].toString()) != userId)
+      .toList();
+
+  if (filteredDelegates.isEmpty) {
+    return const SizedBox.shrink();
+  }  
+
+  final bool isAllSelected = selectedDelegateIds.isEmpty;
+
+  return Container(
+    height: 34,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: [
+
+        /// ALL CHIP
+        _participantChip(
+          label: 'All',
+          selected: isAllSelected,
+          onTap: () async {
+
+            setState(() {
+              selectedDelegateIds.clear();
+            });
+
+            await _refreshCurrentView();
+          },
+        ),
+
+        const SizedBox(width: 8),
+
+        /// PARTICIPANTS
+        ...filteredDelegates.map((d) {
+
+          final int id = int.parse(d['user_id'].toString());
+          final String name = d['name'] ?? '';
+
+          final bool selected =
+              selectedDelegateIds.isNotEmpty &&
+              selectedDelegateIds.first == id;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _participantChip(
+              label: name,
+              selected: selected,
+              onTap: () async {
+
+                setState(() {
+                  selectedDelegateIds
+                    ..clear()
+                    ..add(id);
+                });
+
+                await _refreshCurrentView();
+              },
+            ),
+          );
+
+        }).toList(),
+      ],
+    ),
+  );
+}
+
+Widget _participantChip({
+  required String label,
+  required bool selected,
+  required VoidCallback onTap,
+}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(18),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: selected ? Colors.green.shade50 : Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: selected ? Colors.green : Colors.grey.shade300,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: selected ? Colors.green : Colors.grey.shade700,
+        ),
+      ),
+    ),
+  );
+}
+
+
 /// 🏷 CATEGORY CHIP
 Widget _categoryChip({
   required String label,
@@ -2200,14 +2326,26 @@ Future<void> _logout() async {
   // 🔥 Sign out Firebase
   await FirebaseAuth.instance.signOut();
 
-  // 🔥 Clear backend login state
   final prefs = await SharedPreferences.getInstance();
+
+  // 🔥 Clear stored session
   await prefs.remove('user_id');
   await prefs.remove('firebase_uid');
+  await prefs.remove('username');   // ⭐ IMPORTANT
 
-  // 🔥 Update backend flag
+  // 🔥 Update auth state
   AuthState.backendReady.value = false;
 
+  // 🔥 Navigate to login
+  if (!mounted) return;
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LoginScreen(),
+    ),
+    (route) => false,
+  );
 }
 
 
@@ -2485,11 +2623,15 @@ Widget build(BuildContext context) {
           child: _categoryStrip(),
         ),
 
+        _participantStrip(),
+
+        const SizedBox(height: 8),   // 👈 add space after participant chips
+
         Divider(
           height: 1,
           thickness: 0.6,
           color: Colors.grey.shade300,
-        ),
+        ),       
 
         Expanded(
           child: Column(
