@@ -930,6 +930,7 @@ Future<bool?> _showAddRemarkDialog(Map task) async {
     userId = prefs.getInt('user_id');
 
     if (userId != null) {
+      selectedDelegateIds = [userId!];
       await _loadCategories(); // ✅ THIS WAS MISSING     
     } else {
       debugPrint('❌ user_id not found in SharedPreferences');
