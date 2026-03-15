@@ -1884,11 +1884,22 @@ Widget _categoryStrip() {
 
 Widget _participantStrip() {
 
-  final filteredDelegates = delegates
-      .where((d) => int.parse(d['user_id'].toString()) != userId)
-      .toList();
 
-  if (filteredDelegates.isEmpty) {
+final List<Map<String, dynamic>> orderedDelegates = [];
+
+for (var d in delegates) {
+  final int id = int.parse(d['user_id'].toString());
+
+  if (id == userId) {
+    orderedDelegates.insert(0, d); // put self first
+  } else {
+    orderedDelegates.add(d);
+  }
+}
+
+
+
+  if (delegates.isEmpty) {
     return const SizedBox.shrink();
   }  
 
@@ -1918,10 +1929,14 @@ Widget _participantStrip() {
         const SizedBox(width: 8),
 
         /// PARTICIPANTS
-        ...filteredDelegates.map((d) {
+        ...orderedDelegates.map((d) {
 
           final int id = int.parse(d['user_id'].toString());
-          final String name = d['name'] ?? '';
+          
+          final String name =
+              (int.parse(d['user_id'].toString()) == userId)
+                  ? "Self"
+                  : (d['name'] ?? '');          
 
           final bool selected =
               selectedDelegateIds.isNotEmpty &&
