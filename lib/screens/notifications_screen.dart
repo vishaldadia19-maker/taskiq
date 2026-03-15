@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart'; // adjust path if needed
 import 'participants_screen.dart';
 import 'task_detail_screen.dart';
+import 'all_tasks_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -154,7 +155,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ),
                                   ),
                                 );
-                              }                            
+                              }       
+
+                              // Task Due Reminder → Open All Tasks & highlight task
+                              else if (n['type'] == 'TASK_DUE') {                                                           
+
+                                  String searchText = n['message'] ?? '';
+
+                                  // remove "Reminder:" or "Reminder :"
+                                  searchText = searchText
+                                      .replaceAll(RegExp(r'^Reminder\s*:\s*', caseSensitive: false), '')
+                                      .trim();                                  
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => DashboardScreen(
+                                          initialSearch: searchText,
+                                        ),
+                                      ),
+                                    );
+                                
+                              }                                                   
                           },
                           borderRadius: BorderRadius.circular(12),
                           child: Container(

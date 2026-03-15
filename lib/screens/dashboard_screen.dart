@@ -37,7 +37,14 @@ import 'login_screen.dart';
 
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+
+  final String? initialSearch;
+
+  const DashboardScreen({
+    super.key,
+    this.initialSearch,
+  });  
+
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -159,6 +166,12 @@ Future<void> _initializeDashboard() async {
     super.initState();
 
     _initFCM();
+
+    if (widget.initialSearch != null) {
+      isSearching = true;
+      searchQuery = widget.initialSearch!;
+      searchController.text = widget.initialSearch!;
+    }    
 
     
 //    _initializeDashboard();

@@ -6,9 +6,13 @@ import '../config/api_config.dart';
 class AllTasksScreen extends StatefulWidget {
   final int userId;
 
+  final int? highlightTaskId;
+
+
   const AllTasksScreen({
     super.key,
     required this.userId,
+    this.highlightTaskId
   });
 
   @override
@@ -25,9 +29,16 @@ class _AllTasksScreenState extends State<AllTasksScreen> {
 
   final ScrollController _scrollController = ScrollController();
 
+  String searchQuery = '';
+
   @override
   void initState() {
     super.initState();
+
+    if (widget.highlightTaskId != null) {
+      searchQuery = widget.highlightTaskId.toString();
+    }    
+
     _loadAllTasks(reset: true);
 
     _scrollController.addListener(() {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import 'dashboard_screen.dart';
+import 'login_screen.dart';
 
 class SetCredentialsScreen extends StatefulWidget {
   const SetCredentialsScreen({super.key});
@@ -40,34 +41,55 @@ class _SetCredentialsScreenState
     _loadUser();
   }
 
-  Future<void> _loadUser() async {
-    final prefs = await SharedPreferences.getInstance();
+  
+Future<void> _loadUser() async {
+  final prefs = await SharedPreferences.getInstance();
 
-    userId = prefs.getInt('user_id');
-    firebaseUid = prefs.getString('firebase_uid');
+  userId = prefs.getInt('user_id');
+  firebaseUid = prefs.getString('firebase_uid');
 
-    final savedUsername = prefs.getString('username');
-    final displayName = prefs.getString('display_name');
-    final email = prefs.getString('email');
+  // 🔴 SESSION BROKEN → FORCE LOGOUT
+  if (userId == null) {
 
-    if (savedUsername != null && savedUsername.isNotEmpty) {
-      _usernameController.text = savedUsername;
-    } else if (displayName != null && displayName.isNotEmpty) {
-      _usernameController.text =
-          displayName.replaceAll(' ', '').toLowerCase();
-    } else if (email != null && email.isNotEmpty) {
-      _usernameController.text =
-          email.split('@')[0].toLowerCase();
-    }
+    await prefs.clear();
 
-    // Auto check availability
-    if (_usernameController.text.length >= 4 &&
-        userId != null) {
-      _onUsernameChanged(_usernameController.text);
-    }
+    if (!mounted) return;
 
-    setState(() {});
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LoginScreen(),
+      ),
+      (route) => false,
+    );
+
+    return;
   }
+
+  final savedUsername = prefs.getString('username');
+  final displayName = prefs.getString('display_name');
+  final email = prefs.getString('email');
+
+  if (savedUsername != null && savedUsername.isNotEmpty) {
+    _usernameController.text = savedUsername;
+  } 
+  else if (displayName != null && displayName.isNotEmpty) {
+    _usernameController.text =
+        displayName.replaceAll(' ', '').toLowerCase();
+  } 
+  else if (email != null && email.isNotEmpty) {
+    _usernameController.text =
+        email.split('@')[0].toLowerCase();
+  }
+
+  // Auto check username availability
+  if (_usernameController.text.length >= 4) {
+    _onUsernameChanged(_usernameController.text);
+  }
+
+  if (mounted) setState(() {});
+}
+
   
 
   void _onUsernameChanged(String value) {
