@@ -264,6 +264,19 @@ Future<void> _loadApprovedParticipants() async {
               })
           .toList();
 
+      /// 🔥 ADD CREATOR (SELF USER) ALSO
+      if (userId != null &&
+          !approvedParticipants.any((u) => u['id'] == userId)) {
+
+        approvedParticipants.insert(0, {
+          'id': userId,
+          'full_name': 'Your Self',
+          'email': '',
+          'profile_photo': null,
+        });
+
+      }      
+
       print("Approved Count: ${approvedParticipants.length}");
     }
   } catch (e) {

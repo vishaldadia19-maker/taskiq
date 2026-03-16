@@ -32,6 +32,7 @@ import '../services/auth_service.dart';
 import '../services/fcm_service.dart';
 
 import 'login_screen.dart';
+import '../services/update_task_role_service.dart';
 
 
 
@@ -1145,6 +1146,93 @@ return FilterChip(
 }
 
  
+Future<void> _showChangeRoleSheet(Map task) async {
+
+  final int taskId = task['task_id'];
+
+  final result = await showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+    ),
+    builder: (context) {
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            const Text(
+              "Change Your Role",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            ListTile(
+              leading: const Icon(Icons.build_circle_outlined),
+              title: const Text("Become Doer"),
+              onTap: () {
+                Navigator.pop(context, "DOER");
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.visibility_outlined),
+              title: const Text("Become Viewer"),
+              onTap: () {
+                Navigator.pop(context, "VIEWER");
+              },
+            ),
+
+            const Divider(),
+
+            ListTile(
+              leading: const Icon(Icons.person_remove_outlined, color: Colors.red),
+              title: const Text(
+                "Remove Me From Task",
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(context, "REMOVE");
+              },
+            ),
+
+          ],
+        ),
+      );
+    },
+  );
+
+  if (result == null) return;
+
+  final res = await UpdateTaskRoleService.updateRole(
+    taskId: taskId,
+    userId: userId!,
+    action: result,
+  );
+
+  if (res['success'] == true) {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(res['message'] ?? 'Role updated')),
+    );
+
+    await _refreshCurrentView();
+
+  } else {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(res['error'] ?? 'Failed')),
+    );
+  }
+}
+
 
 
 Future<void> _confirmDelete(Map task) async {
@@ -1391,8 +1479,6 @@ Widget _taskTile(Map task) {
       task['status'] == 'COMPLETION_REQUESTED';
 
  
- final bool isCreator =
-    int.tryParse(task['created_by'].toString()) == userId;
 
   final participantsRaw = task['participants'];
   final List delegates = task['delegates'] ?? [];
@@ -1405,6 +1491,16 @@ Widget _taskTile(Map task) {
 
   final List viewers =
       List<Map<String, dynamic>>.from(participants['viewers'] ?? []);
+
+ final bool isCreator =
+    int.tryParse(task['created_by'].toString()) == userId;
+
+final bool isDoer =
+    doers.any((u) => int.tryParse(u['user_id'].toString()) == userId);
+
+final bool isViewer =
+    viewers.any((u) => int.tryParse(u['user_id'].toString()) == userId);    
+
   
 
   final String? recurrenceType =
@@ -1717,6 +1813,9 @@ if (selectedIndex == 0 &&
                       );
                     }
                   }
+                } else if (value == 'change_role') {   // 👈 ADD THIS BLOCK
+                    await _showChangeRoleSheet(task);
+
                 } else if (value == 'edit') {
                 final updated = await Navigator.push(
                   context,
@@ -1770,25 +1869,54 @@ if (selectedIndex == 0 &&
                 ];
               }
 
-              /// NORMAL TASK
-              return [
-                const PopupMenuItem(
-                  value: 'complete',
-                  child: Text('Mark as Complete'),
-                ),
+              /// NORMAL TASK MENU BASED ON ROLE
+              List<PopupMenuEntry<String>> menuItems = [];
+
+              /// DOERS or CREATOR can complete
+              if (isCreator || isDoer) {
+                menuItems.add(
+                  const PopupMenuItem(
+                    value: 'complete',
+                    child: Text('Mark as Complete'),
+                  ),
+                );
+              }
+
+              /// Everyone can add update
+              menuItems.add(
                 const PopupMenuItem(
                   value: 'remarks',
                   child: Text('Add Update'),
                 ),
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
-              ];
+              );
+
+              if (!isCreator && (isDoer || isViewer)) {
+                menuItems.add(
+                  const PopupMenuItem(
+                    value: 'change_role',
+                    child: Text('Change Role'),
+                  ),
+                );
+              }              
+
+              /// Only creator can edit
+              if (isCreator) {
+                menuItems.add(
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit'),
+                  ),
+                );
+
+                menuItems.add(
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Delete'),
+                  ),
+                );
+              }
+
+              return menuItems;              
             },
             
           ),
@@ -1900,9 +2028,11 @@ for (var d in delegates) {
 
 
 
-  if (delegates.isEmpty) {
+  // Hide strip if only creator exists
+  if (delegates.length <= 1) {
     return const SizedBox.shrink();
-  }  
+  }
+
 
   final bool isAllSelected = selectedDelegateIds.isEmpty;
 
