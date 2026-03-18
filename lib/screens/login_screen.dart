@@ -74,6 +74,14 @@ Future<void> _loginWithUsername() async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('user_id', result['user']['id']);
 
+      await prefs.setString(
+          'email',
+          result['user']['email'] ?? '',
+        );
+
+      print("FULL LOGIN RESPONSE: $result");
+      print("EMAIL FROM API: ${result['user']['email']}");        
+
       final username = result['user']['username'];
 
       // ⭐ SAVE USERNAME

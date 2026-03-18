@@ -33,6 +33,7 @@ class _SetCredentialsScreenState
 
   int? userId;
   String? firebaseUid;
+  String? email;
   Timer? _debounce;
 
   @override
@@ -68,19 +69,23 @@ Future<void> _loadUser() async {
 
   final savedUsername = prefs.getString('username');
   final displayName = prefs.getString('display_name');
-  final email = prefs.getString('email');
+  
+final localEmail = prefs.getString('user_email');
+email = localEmail; // for UI
 
-  if (savedUsername != null && savedUsername.isNotEmpty) {
-    _usernameController.text = savedUsername;
-  } 
-  else if (displayName != null && displayName.isNotEmpty) {
-    _usernameController.text =
-        displayName.replaceAll(' ', '').toLowerCase();
-  } 
-  else if (email != null && email.isNotEmpty) {
-    _usernameController.text =
-        email.split('@')[0].toLowerCase();
-  }
+if (savedUsername != null && savedUsername.isNotEmpty) {
+  _usernameController.text = savedUsername;
+} 
+else if (displayName != null && displayName.isNotEmpty) {
+  _usernameController.text =
+      displayName.replaceAll(' ', '').toLowerCase();
+} 
+else if (localEmail != null && localEmail.isNotEmpty) {
+  _usernameController.text =
+      localEmail.split('@')[0].toLowerCase();
+}  
+
+  
 
   // Auto check username availability
   if (_usernameController.text.length >= 4) {
@@ -209,6 +214,31 @@ Future<void> _loadUser() async {
                 fontWeight: FontWeight.w600,
               ),
             ),
+
+if (email != null)
+  Container(
+    margin: const EdgeInsets.only(top: 10, bottom: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.email, size: 18, color: Colors.black54),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            email!,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),            
 
             const SizedBox(height: 6),
 
@@ -375,6 +405,37 @@ Future<void> _loadUser() async {
                       ),
               ),
             ),
+
+const SizedBox(height: 16),
+
+Center(
+  child: TextButton(
+    onPressed: () async {
+      final prefs = await SharedPreferences.getInstance();
+
+      // ✅ Mark as skipped
+      await prefs.setBool('skipped_credentials', true);
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const DashboardScreen(),
+        ),
+        (route) => false,
+      );
+    },    
+    child: const Text(
+      "Skip for now",
+      style: TextStyle(
+        color: Colors.black54,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  ),
+),
+
+
+
           ],
         ),
       ),

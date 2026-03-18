@@ -149,27 +149,19 @@ Future<void> updateFcmToken(int userId, String token) async {
       await prefs.setInt('user_id', backendUser['id']);
       await prefs.setString('user_email', backendUser['email'] ?? '');
       
-      await prefs.setString(
-        'username',
-        backendUser['username'] ??
-            backendUser['full_name'] ??
-            '',
-      );
+      final usernameFromApi =
+          (backendUser['username'] ?? '').toString().trim();
+
+      await prefs.setString('username', usernameFromApi);
+     
 
       debugPrint("💾 FINAL SAVED USERNAME: ${prefs.getString('username')}");
-
+      debugPrint("💾 FINAL SAVED USERNAME: ${prefs.getString('user_email')}");
 
       await prefs.setString('firebase_uid', backendUser['firebase_uid'] ?? '');      
 
-      await prefs.setString(
-        'username',
-        backendUser['username'] ??
-            backendUser['full_name'] ??
-            '',
-      );
 
-      debugPrint("💾 FINAL SAVED USERNAME: ${prefs.getString('username')}");
-        
+
 
       AuthState.backendReady.value = true; // 🔥 NOTIFY UI
 

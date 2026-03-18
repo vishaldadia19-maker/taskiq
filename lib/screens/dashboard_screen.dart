@@ -150,8 +150,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 
 Future<void> _initializeDashboard() async {
-  await _loadUserAndLoadTasks();
   await _checkCredentialsSetup();   // ⭐ ADD THIS
+  await _loadUserAndLoadTasks();
+  
 
   await _loadDelegates(); // 👈 ADD THIS
 
@@ -380,13 +381,16 @@ Future<void> _checkCredentialsSetup() async {
 
   final username = prefs.getString('username') ?? '';
   final userId = prefs.getInt('user_id');
+  final skipped = prefs.getBool('skipped_credentials') ?? false;
+
+
 
   debugPrint("📊 DASHBOARD CHECK");
   debugPrint("user_id: $userId");
   debugPrint("username: $username");  
-  
 
-  if (username.isEmpty) {
+
+  if (username.isEmpty && !skipped) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
