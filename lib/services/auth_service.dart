@@ -135,15 +135,41 @@ Future<void> updateFcmToken(int userId, String token) async {
     final body = jsonDecode(res.body);
 
     if (body['success'] == true) {
+
+      debugPrint("🔥 BACKEND RESPONSE: $body");
+
       final backendUser = body['user'];
+
+      debugPrint("🧠 backendUser: $backendUser");
+      debugPrint("🧠 username from API: ${backendUser['username']}");      
 
       final prefs = await SharedPreferences.getInstance();
 
       // 🔥 THIS IS WHAT AUTHGATE IS WAITING FOR
       await prefs.setInt('user_id', backendUser['id']);
       await prefs.setString('user_email', backendUser['email'] ?? '');
-      await prefs.setString('user_name', backendUser['full_name'] ?? '');
-      await prefs.setString('firebase_uid', backendUser['firebase_uid'] ?? '');
+      
+      await prefs.setString(
+        'username',
+        backendUser['username'] ??
+            backendUser['full_name'] ??
+            '',
+      );
+
+      debugPrint("💾 FINAL SAVED USERNAME: ${prefs.getString('username')}");
+
+
+      await prefs.setString('firebase_uid', backendUser['firebase_uid'] ?? '');      
+
+      await prefs.setString(
+        'username',
+        backendUser['username'] ??
+            backendUser['full_name'] ??
+            '',
+      );
+
+      debugPrint("💾 FINAL SAVED USERNAME: ${prefs.getString('username')}");
+        
 
       AuthState.backendReady.value = true; // 🔥 NOTIFY UI
 

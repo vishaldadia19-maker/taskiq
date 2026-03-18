@@ -379,6 +379,12 @@ Future<void> _checkCredentialsSetup() async {
   final prefs = await SharedPreferences.getInstance();
 
   final username = prefs.getString('username') ?? '';
+  final userId = prefs.getInt('user_id');
+
+  debugPrint("📊 DASHBOARD CHECK");
+  debugPrint("user_id: $userId");
+  debugPrint("username: $username");  
+  
 
   if (username.isEmpty) {
     Navigator.pushReplacement(
